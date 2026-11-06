@@ -307,21 +307,21 @@ def _grow_colour(rgb: np.ndarray, known: np.ndarray, wanted: np.ndarray) -> np.n
     colour[1:-1, 1:-1] = rgb
     colour = colour.reshape(-1, 3)
     have = np.pad(known, 1).reshape(-1)
-    todo = np.flatnonzero(np.pad(wanted & ~known, 1))
+    left = np.flatnonzero(np.pad(wanted & ~known, 1))
     around = np.array([dy * stride + dx for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dy or dx])
 
-    while todo.size:
-        near = todo[:, None] + around[None, :]
+    while left.size:
+        near = left[:, None] + around[None, :]
         weight = have[near]
         count = weight.sum(axis=1)
         ready = count > 0
         if not ready.any():
             break
         total = (colour[near] * weight[..., None]).sum(axis=1)
-        filled = todo[ready]
+        filled = left[ready]
         colour[filled] = total[ready] / count[ready, None]
         have[filled] = True
-        todo = todo[~ready]
+        left = left[~ready]
     return colour.reshape(height + 2, stride, 3)[1:-1, 1:-1]
 
 

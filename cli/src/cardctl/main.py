@@ -42,6 +42,17 @@ ASSETS = {
 # so a script can check where each step ran without reading the printed table.
 LEDGER = "card.json"
 POLL_S = 1.0
+# What a status means when the answer carries no sentence of its own: the
+# gateway's, when the api behind it is down or a wrong key was sent too often.
+DOWN = (
+    "The gateway answered, but the api behind it did not: make logs, or make gpu-logs on the node."
+)
+SAID = {
+    429: "Too many wrong keys from this address. Wait a minute, then try again.",
+    502: DOWN,
+    503: DOWN,
+    504: DOWN,
+}
 
 
 class Problem(Exception):
@@ -158,11 +169,13 @@ def check(response: httpx.Response, what: str) -> None:
             "  Check .env, and that CARD_API_KEY is not set to an old key in this shell."
         )
     if response.status_code >= 400:
-        detail = ""
         try:
-            detail = response.json().get("detail", "")
+            body = response.json()
         except ValueError:
-            detail = response.text[:200]
+            body = None
+        detail = body.get("detail") if isinstance(body, dict) else None
+        if not isinstance(detail, str) or not detail:
+            detail = SAID.get(response.status_code, response.text[:200])
         raise Problem(f"{what} failed: HTTP {response.status_code}. {detail}")
 
 

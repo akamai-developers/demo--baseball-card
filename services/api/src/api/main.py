@@ -25,6 +25,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -32,7 +33,7 @@ from api import catalog, sweeper
 from api.db import Database
 from api.health import probe_all
 from api.pipeline import Jobs
-from api.routes import router
+from api.routes import router, unusable_request
 from api.storage import Storage
 from card.render import CHROMIUM
 from common import __version__
@@ -168,3 +169,4 @@ async def models(request: Request) -> catalog.Catalog:
 
 
 app.include_router(router)
+app.add_exception_handler(RequestValidationError, unusable_request)

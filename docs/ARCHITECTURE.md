@@ -83,6 +83,11 @@ of the card copies them. vLLM sends none: the text row comes from the node's
 | text | the template |
 | compose, render | no card. The job fails |
 
+A model service that does not answer, or not within `STEP_TIMEOUT_S`
+(`ART_TIMEOUT_S` for art), also leaves a warning on the job: which service,
+what the card got instead, and `make gpu-logs` on the node or `make logs` on a
+laptop. The app shows it beside the ledger, and cardctl prints it.
+
 ## the two GPU layouts
 
 `GPU_COUNT` in `.env` picks the plan and the layout. A layout is six lines,

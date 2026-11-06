@@ -15,7 +15,9 @@ the comps are. Each branch has its own ceiling and its own fallback, and none
 of them can stop the card: a failed cutout leaves the background, a failed art
 step gets a drawn stadium, a failed comps lookup drops the "Swings like"
 section, and a failed text step, or text that fails its checks twice, gets the
-template. The only step that can fail the whole job is the render itself.
+template. The only step that can fail the whole job is the render itself. A
+service that does not answer leaves a warning on the job that names it, says
+what the card got instead, and says where its log is.
 
 The render writes front.png and preview.jpg the moment Chromium has drawn the
 front, a little before back.png. GET /cards/{id} lists the files that are there
@@ -83,6 +85,33 @@ COMPS_MODEL = "nearest neighbour"
 ASSET_NAMES = {"front": "front.png", "back": "back.png", "preview": "preview.jpg"}
 
 
+# How a sentence names each model service, and what a card gets without it.
+NAMES = {"cutout": "the cutout service", "art": "the art service", "text": "the text model"}
+INSTEAD = {
+    "cutout": "so the card shows the background without the person",
+    "art": "so the stadium is drawn instead of painted",
+    "text": "so the back has the template's words",
+}
+
+
+def unanswered(step: str, problem: BaseException, timeout_s: int) -> str:
+    """What a model service did instead of answering, as a sentence with no full stop."""
+    name = NAMES[step]
+    if isinstance(problem, httpx.ConnectError | httpx.ConnectTimeout):
+        said = f"{name} is not answering"
+    elif isinstance(problem, TimeoutError | httpx.TimeoutException):
+        said = f"{name} did not answer in {timeout_s} s"
+    elif isinstance(problem, httpx.TransportError):
+        said = f"{name} dropped the connection"
+    elif isinstance(problem, ServiceError):
+        said = str(problem)
+    elif isinstance(problem, OSError):
+        said = f"{name} sent back something that is not an image"
+    else:
+        said = f"{name} failed with {type(problem).__name__}: {problem}"
+    return said[:1].upper() + said[1:]
+
+
 def _elapsed_ms(started: float) -> int:
     return int(round((time.perf_counter() - started) * 1000))
 
@@ -138,6 +167,19 @@ class Pipeline:
         log.warning("card %s step %s failed. %s", self.card_id, step, message)
         await self._set(step, status="failed", ms=_elapsed_ms(started), error=message)
 
+    async def _unanswered(
+        self, step: str, problem: BaseException, timeout_s: int, **fields: object
+    ) -> None:
+        """A model service gave this card nothing. The row says what it did, and a
+        warning says what the card got instead and where to look."""
+        said = unanswered(step, problem, timeout_s)
+        log.warning(
+            "card %s step %s: %s. %s: %s", self.card_id, step, said, type(problem).__name__, problem
+        )
+        await self._set(step, **{"status": "failed", "error": f"{said}.", **fields})
+        logs = "make gpu-logs" if self.settings.is_real else "make logs"
+        await self._warn([f"{said}, {INSTEAD[step]}. {logs} says why."])
+
     def _from_service(self, meta: dict, started: float) -> dict:
         """Step columns from a service's headers. Our clock covers what it left out."""
         return {
@@ -175,7 +217,8 @@ class Pipeline:
             image = Image.open(io.BytesIO(reply.body)).convert("RGBA")
             image.load()
         except (ServiceError, httpx.HTTPError, TimeoutError, OSError) as exc:
-            await self._failed("cutout", started, exc)
+            timeout_s = self.settings.step_timeout_s
+            await self._unanswered("cutout", exc, timeout_s, ms=_elapsed_ms(started))
             return None
 
         self._keep("cutout.png", reply.body)
@@ -231,7 +274,7 @@ class Pipeline:
         """The background. This one always returns an image, one way or another."""
         started = time.perf_counter()
         url = self.settings.art_url
-        problem = "no art service configured"
+        problem: BaseException | None = None
 
         if url:
             await self._set("art", status="running")
@@ -247,21 +290,22 @@ class Pipeline:
                 )
                 return await self._painted(reply, started)
             except (ServiceError, httpx.HTTPError, TimeoutError, OSError) as exc:
-                problem = f"{type(exc).__name__}: {exc}"
-                log.warning("card %s art fell back. %s", self.card_id, problem)
+                problem = exc
 
         image = await blocking(fallback, self.style, seed_for(self.card_id, self.style))
         # The step is done because the card has a background. `error` says why it
         # is not the one the model would have painted.
-        await self._set(
-            "art",
-            status="done",
-            model=DRAWN,
-            license="n/a",
-            ran_on=self.settings.gpu_label,
-            ms=_elapsed_ms(started),
-            error=problem,
-        )
+        drawn = {
+            "status": "done",
+            "model": DRAWN,
+            "license": "n/a",
+            "ran_on": self.settings.gpu_label,
+            "ms": _elapsed_ms(started),
+        }
+        if problem is None:
+            await self._set("art", error="no art service configured", **drawn)
+        else:
+            await self._unanswered("art", problem, self.settings.art_timeout_s, **drawn)
         return image
 
     async def comps(self) -> list[Comp]:
@@ -325,8 +369,9 @@ class Pipeline:
                 ),
                 timeout=self.settings.step_timeout_s,
             )
-        except TimeoutError:
-            await self._failed("text", started, "the llm did not answer in time")
+        except TimeoutError as exc:
+            timeout_s = self.settings.step_timeout_s
+            await self._unanswered("text", exc, timeout_s, ms=_elapsed_ms(started))
             return template_text(self.stats)
 
         # Each answer and what check() found wrong with it, for reading a back
@@ -340,6 +385,9 @@ class Pipeline:
             meta["license"] = meta.get("license") or self.settings.llm_license or None
             meta["ran_on"] = meta.get("ran_on") or self.settings.llm_ran_on or None
             await self._set("text", status="done", **self._from_service(meta, started))
+        elif result.cause is not None:
+            timeout_s = self.settings.step_timeout_s
+            await self._unanswered("text", result.cause, timeout_s, ms=_elapsed_ms(started))
         else:
             await self._failed("text", started, result.error or "the llm reply was unusable")
         return result.text
@@ -492,4 +540,4 @@ class Jobs:
             await asyncio.wait(set(self._tasks.values()), timeout=timeout)
 
 
-__all__ = ["ASSET_NAMES", "COMPS_MODEL", "STEPS", "Jobs", "Pipeline", "blocking"]
+__all__ = ["ASSET_NAMES", "COMPS_MODEL", "STEPS", "Jobs", "Pipeline", "blocking", "unanswered"]

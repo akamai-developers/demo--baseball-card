@@ -77,10 +77,11 @@ resource "linode_instance" "node" {
   # this node, and a 192.168.128.0/17 address is one more way in.
   private_ip = false
 
-  # Legacy config interfaces, so linode_firewall.linodes attaches the rules to
-  # the instance. With interface_generation = "linode" a firewall binds to an
-  # individual interface instead, and the account-wide default for new Linodes
-  # can change under you. Pinning it keeps the firewall attached either way.
+  # Interfaces on the configuration profile, so linode_firewall.linodes attaches
+  # the rules to the instance. With interface_generation = "linode" a firewall
+  # binds to an individual interface instead, and the account-wide default for
+  # new Linodes can change under you. Pinning it keeps the firewall attached
+  # either way.
   interface_generation = "legacy_config"
 
   metadata {

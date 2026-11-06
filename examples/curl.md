@@ -95,6 +95,22 @@ curl -s -o /dev/null -w '%{http_code}\n' -X DELETE \
 curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $CARD_API_KEY" $G/cards/$CARD
 ```
 
+A post the api cannot use is a 400, and `detail` says what to change:
+
+```bash
+curl -s -w '\n' -H "Authorization: Bearer $CARD_API_KEY" \
+  -F photo=@tests/fixtures/portrait.jpg \
+  -F stats='{"name": "Sam Rivera", "number": 120}' \
+  $G/cards
+```
+
+```
+{"detail":"The number is 120. It has to be from 0 to 99."}
+```
+
+A body over 20 MB never reaches the api. The gateway answers 413, with a
+`detail` of its own.
+
 ## each model on its own
 
 Every model answers on its own path, with the same key. Each answer carries

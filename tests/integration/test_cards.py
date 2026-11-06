@@ -203,27 +203,43 @@ def test_a_made_card_lists_the_files_it_has(made: dict) -> None:
 
 def test_stats_with_no_name_is_a_400(gateway: str, live_key: str, portrait) -> None:
     response = create(gateway, live_key, portrait.read_bytes(), '{"number": 23}')
-    assert response.status_code == 400
-    assert "name" in response.json()["detail"]
+    assert (response.status_code, response.json()["detail"]) == (400, "The card needs a name.")
 
 
 def test_a_file_that_is_not_an_image_is_a_400(gateway: str, live_key: str) -> None:
     response = create(gateway, live_key, b'{"name": "wrong file"}', '{"name": "Sam"}')
     assert response.status_code == 400
+    assert response.json()["detail"] == "That file is not a photo. Send a JPEG, PNG or WebP."
 
 
 def test_a_style_that_is_not_one_is_a_400(gateway: str, live_key: str, portrait) -> None:
     response = create(gateway, live_key, portrait.read_bytes(), '{"name": "Sam"}', style="neon")
     assert response.status_code == 400
-    assert response.json()["detail"] == "style is not usable: use one of akamai, classic"
+    assert response.json()["detail"] == 'There is no style "neon". Use akamai or classic.'
 
 
 def test_a_photo_over_the_caddy_body_cap_does_not_reach_the_api(
     gateway: str, live_key: str
 ) -> None:
-    """Caddy caps request bodies at 20 MB, so the api never decodes one."""
+    """Caddy caps request bodies at 20 MB, so the api never decodes one, and says
+    so in a sentence where Caddy on its own sends nothing."""
     response = create(gateway, live_key, b"\xff\xd8\xff" + b"x" * 25_000_000, '{"name": "Sam"}')
-    assert response.status_code in (400, 413)
+    assert response.status_code == 413
+    assert response.headers["content-type"].startswith("application/json")
+    assert response.json() == {
+        "detail": "The request is over the gateway's 20 MB limit. Send a smaller photo."
+    }
+
+
+def test_a_photo_between_the_two_limits_is_refused_by_the_api_with_its_size(
+    gateway: str, live_key: str
+) -> None:
+    """Over MAX_UPLOAD_MB and under Caddy's cap: the api answers, with its limit."""
+    response = create(gateway, live_key, b"\xff\xd8\xff" + b"x" * 16_000_000, '{"name": "Sam"}')
+    assert (response.status_code, response.json()["detail"]) == (
+        400,
+        "The photo is over the 15 MB limit.",
+    )
 
 
 def test_an_unknown_card_is_a_404_not_a_500(gateway: str, live_key: str) -> None:

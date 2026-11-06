@@ -94,7 +94,7 @@ def test_the_orientation_tag_is_applied_before_it_is_dropped() -> None:
 
 
 def test_an_oversize_upload_is_refused_before_it_is_decoded() -> None:
-    with pytest.raises(PhotoError, match="larger than"):
+    with pytest.raises(PhotoError, match=r"^The photo is over the 0\.002 MB limit\.$"):
         prepare(b"x" * 2001, max_bytes=2000, max_px=2048)
 
 
@@ -104,7 +104,7 @@ def test_an_empty_upload_is_refused() -> None:
 
 
 def test_something_that_is_not_an_image_is_refused() -> None:
-    with pytest.raises(PhotoError, match="not an image"):
+    with pytest.raises(PhotoError, match="not a photo"):
         prepare(b'{"name": "you posted the stats file"}', max_bytes=15_000_000, max_px=2048)
 
 

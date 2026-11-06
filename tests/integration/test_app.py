@@ -1,7 +1,7 @@
 """The browser app, run in a browser, against the mock stack through Caddy.
 
 Sign in, the test photo and the sample player, Generate, the card's front
-before its back, flip, both sides saved at print size, Make another, the node
+before its back, flip, both sides saved at full size, Make another, the node
 panel and How it works. It runs the real api, the real pipeline and the real
 renderer, so what the page shows is what the stack did.
 
@@ -247,7 +247,7 @@ def test_a_card_from_the_test_photo(
     # The test photo is placed by its face, with nothing to warn about.
     assert page.locator("#result-warnings").is_hidden()
 
-    # The front is up, at print size.
+    # The front is up, at full size.
     page.wait_for_function("document.getElementById('card-front').naturalWidth === 1500")
     shot(page, "result-front-1920x1080.png")
 
@@ -341,7 +341,7 @@ def test_a_picture_whose_fetch_fails_is_asked_for_again(
     page.wait_for_function("document.getElementById('card-back').naturalWidth === 1500")
 
 
-def test_save_front_and_save_back_write_the_pngs_at_print_size(
+def test_save_front_and_save_back_write_the_pngs_at_full_size(
     watched: Watched, gateway: str, live_key: str, tmp_path: Path, mock_backends
 ) -> None:
     page = watched.page
@@ -451,8 +451,7 @@ def test_a_number_the_api_refuses_comes_back_as_its_sentence(
         "document.getElementById('generate-note').classList.contains('is-error')"
     )
     note = page.inner_text("#generate-note")
-    assert note.startswith("Stats is not usable")
-    assert "99" in note
+    assert note == "The number is 150. It has to be from 0 to 99."
     assert page.is_visible("#make-form")
 
 

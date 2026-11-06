@@ -82,7 +82,10 @@ environment or `.env` and has no flag for it.
 
 **Nothing secret is in the repo.** A test reads every file git would commit for
 anything shaped like a key, a token or a private key, and holds `.env`,
-`secrets/`, `*.tfstate*` and `*.tfvars` to `.gitignore`.
+`secrets/`, `*.tfstate*` and `*.tfvars` to `.gitignore`. It reads every commit
+in the history the same way, message and patch, because a secret committed once
+and deleted later is still in every clone. No file `.gitignore` names was ever
+committed.
 
 ```bash
 uv run pytest tests/security/test_repo_secrets.py -q
@@ -108,9 +111,11 @@ uv run pytest tests/security/test_domain_mode.py -q
 ```
 
 **A request body is capped at 20 MB** by Caddy, before any service sees it.
+A bigger one gets a 413 and a sentence that says the limit.
 
 ```bash
 grep -n 'max_size' Caddyfile
+uv run pytest tests/integration/test_cards.py -q -k body_cap
 ```
 
 ## the models
@@ -262,7 +267,7 @@ terraform -chdir=deploy/terraform output inbound_rules    # on a node
 ```
 
 From outside `ADMIN_CIDR`, every port of a tunnel-mode node should time out.
-From inside it, this should print 22 and nothing else. Not run yet:
+From inside it, this should list 22 and nothing else. Not run yet:
 
 ```bash
 IP=$(terraform -chdir=deploy/terraform output -raw ip_address)

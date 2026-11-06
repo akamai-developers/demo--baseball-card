@@ -19,20 +19,22 @@ and Gemma 4 writes your nickname and a scouting report from the facts you gave.
 The back of the card lists which model ran each step, under which licence, on
 which GPU, in how many milliseconds.
 
-## status
+## what has run, and where
 
-This repo is being built, and this README says what works today.
+This repo was built and tested on one Linux box with 16 cores, Docker and no
+GPU. No node has run it yet.
 
-| Part | State |
+| Part | Where it has run |
 |---|---|
-| The key, the gateway, `/livez`, `/healthz`, `/models` | built, tested in mock mode |
-| The card, front and back, in two styles | built, drawn on a laptop with stand-ins for the models |
-| The pipeline, the comps, the photo checks, `cardctl` | built, tested in mock mode |
-| The cutout, art, gpu-stats and vLLM services, with stand-ins for the models | built, tested in mock mode |
-| BiRefNet, FLUX.2 [klein] and Gemma 4 in those services | built. Tested with the models stubbed. BiRefNet run for real on a CPU. FLUX and Gemma not yet run from this repo |
-| The two GPU layouts, one card and two | built. Two cards measured with these models and settings. One card sized on paper |
-| The browser app, with the camera and the face detector | built, tested in mock mode in Chromium |
-| The deploy to Akamai Cloud: Terraform, cloud-init, the scripts, `make gpu-check` | built. Run here against stand-ins for Terraform, SSH and the Linode API. `make gpu-check` run against the live API. Not yet run on a real node |
+| The gateway, the key, the api, the pipeline, the comps, `cardctl` | the mock stack, through the tests and `make card-mock` |
+| The card, both sides, both styles | Chromium on that box, with stand-ins for the models |
+| The browser app, the camera and the face detector | Chromium against the mock stack, with a fake camera |
+| BiRefNet | for real, on that box's CPU, with `make card-cpu-cutout` |
+| FLUX.2 [klein] and Gemma 4 | their code, in tests with the model stubbed. Not run from this repo |
+| The two-card layout | its memory, measured on another deployment of the same models and settings |
+| The one-card layout | sized on paper. Not run anywhere |
+| Terraform, cloud-init and the deploy scripts | against stand-ins for Terraform, SSH and the Linode API, and `terraform test` with a mocked provider |
+| `make gpu-check` | against the live Linode API, which it only reads |
 
 ## models
 
@@ -48,7 +50,8 @@ three models.
 
 The VRAM column is `nvidia-smi` per process on a `g2-gpu-rtx4000a2-s` node
 running these models with the two-card settings: FLUX in September 2026, the
-other two on 2026-10-30. This repo has not run on a GPU yet. The one-card layout has not run anywhere: it is sized on
+other two on 2026-10-30. That was another deployment of the same three
+models, not this repo. The one-card layout has not run anywhere: it is sized on
 paper. There, FLUX keeps its 16 GB of weights in the node's RAM and copies each
 layer to the card as it paints, under 3,000 MiB of the card at a time, and
 slower by an amount not measured yet. Gemma 4 12B and BiRefNet take the rest.
@@ -240,6 +243,11 @@ curl -s -w '\n' -H "Authorization: Bearer $CARD_API_KEY" http://localhost:8443/h
 `/healthz` lists each model service as it describes itself.
 [examples/curl.md](examples/curl.md) calls every route once: make a card, read
 it, fetch both sides, delete it, and call each model on its own.
+
+A post the api cannot use is a 400 whose `detail` says what to change, such as
+`The number is 120. It has to be from 0 to 99.` A model service that is down
+does not stop a card: the card comes out without that model, and its warnings
+say which service and where its log is.
 
 A card and its photo stay on the data volume for `RETENTION_HOURS`, 24 by
 default. `DELETE /cards/{id}` removes them at once.

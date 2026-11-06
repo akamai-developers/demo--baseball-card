@@ -41,6 +41,12 @@
 	request_body {
 		max_size 20MB
 	}
+	# A body over the cap is cut off with a 413 and no body. This one says why,
+	# in the api's own shape, so cardctl and the app show the sentence.
+	handle_errors 413 {
+		header Content-Type application/json
+		respond `{"detail":"The request is over the gateway's 20 MB limit. Send a smaller photo."}` 413
+	}
 
 	# Method, path, status, duration. Headers are deleted, because the API key
 	# travels in the Authorization header and must never reach a log file.

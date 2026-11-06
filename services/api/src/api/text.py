@@ -251,6 +251,9 @@ class TextResult:
     text: CardText
     meta: dict = field(default_factory=dict)
     error: str | None = None
+    # Why the last try never reached the model: the connection, a timeout, an
+    # HTTP error. None when the model answered, even with text that failed.
+    cause: Exception | None = None
 
     @property
     def from_model(self) -> bool:
@@ -982,19 +985,21 @@ async def generate(
     meta: dict = {}
     tries: list[dict] = []
     error = "the llm service is not configured"
+    cause: Exception | None = None
 
     for _ in range(attempts):
         try:
             body, meta = await post_chat(client, base, key, chat_payload(model, messages))
             answer = body["choices"][0]["message"]["content"] or ""
         except (ServiceError, httpx.HTTPError) as exc:
-            error = f"{type(exc).__name__}: {exc}"
+            error, cause = f"{type(exc).__name__}: {exc}", exc
             tries.append({"answer": None, "problems": [error]})
             continue
         except (KeyError, IndexError, TypeError):
-            error = "the llm reply had no message content"
+            error, cause = "the llm reply had no message content", None
             tries.append({"answer": None, "problems": [error]})
             continue
+        cause = None
 
         try:
             text = parse(answer)
@@ -1013,7 +1018,9 @@ async def generate(
         if answer.strip():
             messages = retry_messages(stats, answer, problems)
 
-    return TextResult(text=template_text(stats), meta={**meta, "tries": tries}, error=error)
+    return TextResult(
+        text=template_text(stats), meta={**meta, "tries": tries}, error=error, cause=cause
+    )
 
 
 __all__ = [

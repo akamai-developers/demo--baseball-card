@@ -64,10 +64,10 @@ def test_the_vendor_mount_answers_even_when_it_is_empty(
     a 404 rather than a 401, so detector.js can turn the framing guide off."""
     from api.main import app
 
-    vendor = next(route.app for route in app.routes if getattr(route, "name", None) == "vendor")
-    monkeypatch.setattr(vendor, "directory", tmp_path)
-    monkeypatch.setattr(vendor, "all_directories", [tmp_path])
-    monkeypatch.setattr(vendor, "config_checked", False)
+    mounted = next(route.app for route in app.routes if getattr(route, "name", None) == "vendor")
+    monkeypatch.setattr(mounted, "directory", tmp_path)
+    monkeypatch.setattr(mounted, "all_directories", [tmp_path])
+    monkeypatch.setattr(mounted, "config_checked", False)
     assert client.get("/vendor/tasks-vision/vision_bundle.mjs").status_code == 404
 
 

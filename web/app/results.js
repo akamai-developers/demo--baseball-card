@@ -4,7 +4,7 @@
  * the ledger beside it fills in: each step with its model, its licence, where
  * it ran and its milliseconds. The front comes in the moment the node has it,
  * a little before the back. A tap on the card, Space, Enter or Flip turns it
- * over. Save front and Save back write the PNGs at print size, 1500 x 2100.
+ * over. Save front and Save back write the PNGs at full size, 1500 x 2100.
  * Make another brings the form back as it was, photo and all, so one change
  * makes the next card.
  *
@@ -131,7 +131,7 @@ function apply(card, job) {
 }
 
 /** Fetch one of the card's pictures once, and keep it once it is decoded, so
- *  the swap from the preview to the front at print size shows no empty frame. */
+ *  the swap from the preview to the front at full size shows no empty frame. */
 async function fetchAsset(card, asset) {
   if (card.asked.has(asset)) return;
   card.asked.add(asset);
@@ -196,7 +196,7 @@ function seconds(card) {
   return `${(((card.finishedAt || Date.now()) - card.startedAt) / 1000).toFixed(1)} s`;
 }
 
-/** The front on show: the print-size PNG, or the preview until it comes. */
+/** The front on show: the full-size PNG, or the preview until it comes. */
 const frontUrl = (card) => card.urls["front.png"] || card.urls["preview.jpg"];
 
 /** What the line under the name says. The front can land as either file

@@ -35,12 +35,6 @@ def load_script(path: Path) -> ModuleType:
 
 
 @pytest.fixture
-def api_key() -> str:
-    """A key long enough to pass the startup guard. Not a real one."""
-    return TEST_KEY
-
-
-@pytest.fixture
 def clean_settings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """Give a test its own Settings, built from env vars and a throwaway data dir.
 
@@ -88,6 +82,28 @@ def dotenv_value(name: str) -> str | None:
     return value
 
 
+def committable() -> list[Path]:
+    """Every file git would commit: the tracked ones, and untracked ones that
+    .gitignore does not hide."""
+    listed = subprocess.run(
+        ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    paths = [REPO_ROOT / name for name in listed.split("\0") if name]
+    return sorted(path for path in paths if path.is_file())
+
+
+def text_of(path: Path) -> str | None:
+    """The file as text, or None for a binary one."""
+    data = path.read_bytes()
+    if b"\0" in data[:8192]:
+        return None
+    return data.decode("utf-8", errors="replace")
+
+
 def docker_cmd() -> list[str] | None:
     """The docker command the Makefile uses, from DOCKER, or None when it does not work.
 
@@ -124,7 +140,7 @@ def compose_config(
     Compose reads CARD_API_KEY when it starts, for vLLM's key. A clone that has
     not run `make env` has none, so a stand-in is passed when neither the shell
     nor .env holds one. The rendered config holds the key from .env: compare
-    names, or use refute_key, and never print it.
+    names, or use refute_key, and never show it.
     """
     environ = dict(os.environ)
     if not environ.get("CARD_API_KEY") and not dotenv_value("CARD_API_KEY"):

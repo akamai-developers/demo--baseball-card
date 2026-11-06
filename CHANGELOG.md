@@ -155,8 +155,8 @@ stack.
 - Tests: the app end to end at 1920 x 1080 and 390 x 844, the front before
   the back, the post field by field, the camera with a fake device made from
   the test photo, the framing table, the face box, the key never in a URL and
-  no request off the page's origin, the open paths through Caddy, the vendor
-  lock, the motion tokens, and `state.js` held to `styles.json`, `schemas.py`,
+  no request off the page's origin, the open paths through Caddy,
+  `web/vendor.lock`, the motion tokens, and `state.js` held to `styles.json`, `schemas.py`,
   `pipeline.py` and `examples/stats.json`.
 
 ### Notes

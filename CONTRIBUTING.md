@@ -138,7 +138,7 @@ the api sends back. `tests/unit/test_copy.py` reads those files.
 
 - No em-dashes. Use a period or a comma.
 - None of the words listed in `BANNED` in `services/api/src/api/writing.py`.
-  They are the words that make a page read like any vendor's blog.
+  They are the words that make a page read like any company's blog.
 - Short sentences, one idea each, with numbers and file names over adjectives.
 - Say what was only tested in mock mode.
 

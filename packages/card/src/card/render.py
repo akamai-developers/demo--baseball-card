@@ -398,7 +398,7 @@ def back_html(
             for comp in comps
         ],
         # Only steps that finished and named a model. A compose or render step
-        # has no model, and a failed step has no honest line to print.
+        # has no model, and a failed step has no honest line to show.
         steps=[step for step in steps if step.model and step.status == "done"],
         made=made_line(steps),
     )

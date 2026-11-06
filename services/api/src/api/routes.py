@@ -33,6 +33,7 @@ import json
 import logging
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -41,7 +42,7 @@ from api.db import Database
 from api.pipeline import STEPS, Jobs, Pipeline
 from api.storage import ASSETS, Box, Storage, is_card_id
 from common.auth import require_api_key
-from common.schemas import STYLES, CardJob, Stats, new_card_id
+from common.schemas import METRICS, STYLES, CardJob, Stats, new_card_id
 from common.settings import Settings, get_settings
 
 log = logging.getLogger("api")
@@ -67,7 +68,8 @@ def _json_field(name: str, raw: str) -> object:
     try:
         return json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise HTTPException(400, f"{name} is not valid JSON: {exc.msg} at char {exc.pos}") from exc
+        message = f"The {name} field is not valid JSON: {exc.msg} at character {exc.pos}."
+        raise HTTPException(400, message) from exc
 
 
 def _problems(name: str, exc: ValidationError) -> str:
@@ -78,20 +80,116 @@ def _problems(name: str, exc: ValidationError) -> str:
     )
 
 
+# What the app's form calls each field, and the unit after its number.
+LABELS = {
+    "name": ("The name", ""),
+    "number": ("The number", ""),
+    "position": ("The position", ""),
+    "bats": ("Bats", ""),
+    "throws": ("Throws", ""),
+    "height_in": ("Height", " in"),
+    "weight_lb": ("Weight", " lb"),
+    "hometown": ("The hometown", ""),
+}
+
+
+def _quoted(value: object) -> str:
+    """A value the caller sent, the way a sentence quotes it back."""
+    if isinstance(value, bool) or value is None:
+        return json.dumps(value)
+    if isinstance(value, int | float):
+        return f"{value:g}"
+    if isinstance(value, str):
+        return json.dumps(value if len(value) <= 24 else value[:21] + "...")
+    return "a list" if isinstance(value, list) else "an object"
+
+
+def _range_of(field: str) -> tuple[object, object]:
+    """The lowest and highest whole number Stats takes in a field."""
+    low = high = None
+    for limit in Stats.model_fields[field].metadata:
+        low, high = getattr(limit, "ge", low), getattr(limit, "le", high)
+    return low, high
+
+
+def stats_problem(error: dict) -> str:
+    """One thing wrong with the stats, as a sentence that says how to put it right."""
+    kind, where, value = error["type"], error["loc"], error.get("input")
+    context = error.get("ctx") or {}
+    if not where:
+        return 'The stats have to be a JSON object, such as {"name": "Sam Rivera"}.'
+    field = str(where[0])
+    if kind == "extra_forbidden":
+        return f"{field} is not part of a card. It takes {', '.join(Stats.model_fields)}."
+    if field == "metrics":
+        if kind == "value_error":
+            return f"{context['error']}."
+        if len(where) == 1:
+            return 'metrics has to be an object of numbers, such as {"bat_speed_mph": 71.5}.'
+        metric = METRICS.get(str(where[1]))
+        if metric is None:
+            return f"{where[1]} has to be a number."
+        span = f"{metric.low:g} to {metric.high:g} {metric.unit}"
+        return f"{metric.label} is {_quoted(value)}. It has to be a number from {span}."
+    label, unit = LABELS[field]
+    if kind == "missing":
+        return "The card needs a name."
+    if kind == "string_too_short":
+        return f"{label} is empty. The card needs one."
+    if kind == "string_too_long":
+        return f"{label} is {len(value)} characters. It can be {context['max_length']} at most."
+    if kind == "literal_error":
+        options = context["expected"].replace("'", "")
+        return f"{label} is {_quoted(value)}. Use {options}."
+    if kind == "string_type":
+        return f"{label} has to be text."
+    if field in ("number", "height_in", "weight_lb"):
+        low, high = _range_of(field)
+        given = _quoted(value) + (unit if isinstance(value, int | float) else "")
+        whole = "" if kind in ("greater_than_equal", "less_than_equal") else "a whole number "
+        return f"{label} is {given}. It has to be {whole}from {low} to {high}{unit}."
+    return f"{label}: {error['msg']}."
+
+
 def parse_stats(raw: str) -> Stats:
     """The stats form field. A bad one is the caller's problem, so say what is wrong."""
     payload = _json_field("stats", raw)
     try:
         return Stats.model_validate(payload)
     except ValidationError as exc:
-        raise HTTPException(400, f"stats is not usable: {_problems('stats', exc)}") from exc
+        problems = [stats_problem(error) for error in exc.errors()[:5]]
+        raise HTTPException(400, " ".join(problems)) from exc
+
+
+# What POST /cards says to a form without one of its two required fields.
+MISSING = {
+    "photo": "The photo is missing. Send it as a file in a form field named photo.",
+    "stats": "The stats are missing. Send them as JSON in a form field named stats, "
+    'such as {"name": "Sam Rivera"}.',
+}
+
+
+def form_problem(error: dict) -> str:
+    """One thing FastAPI could not read in a request, as a sentence."""
+    field = str(error["loc"][-1]) if error["loc"] else "request"
+    if error["type"] == "missing" and field in MISSING:
+        return MISSING[field]
+    if field == "photo":
+        return "The photo has to be a file, not text."
+    return f"The {field} field is not usable: {error['msg']}."
+
+
+async def unusable_request(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """A request FastAPI could not read, answered in sentences rather than its list."""
+    problems = [form_problem(error) for error in exc.errors()[:5]]
+    return JSONResponse({"detail": " ".join(problems)}, status_code=400)
 
 
 def parse_style(raw: str) -> str:
     """The style form field: one of the styles in packages/card/src/card/styles.json."""
     value = raw.strip()
     if value not in STYLES:
-        raise HTTPException(400, f"style is not usable: use one of {', '.join(STYLES)}")
+        raise HTTPException(400, f"There is no style {_quoted(value)}. Use {' or '.join(STYLES)}.")
     return value
 
 
@@ -146,10 +244,10 @@ STOP_WAIT_S = 15.0
 async def _known_card(db: Database, card_id: str) -> CardJob:
     """The job, or a 404. An id that could not exist never reaches the database."""
     if not is_card_id(card_id):
-        raise HTTPException(404, "no such card")
+        raise HTTPException(404, "There is no such card.")
     job = await asyncio.to_thread(db.get_job, card_id)
     if job is None:
-        raise HTTPException(404, "no such card")
+        raise HTTPException(404, "There is no such card.")
     return job
 
 
@@ -224,11 +322,11 @@ async def read_asset(
     card is still running. The job's `assets` says which are there.
     """
     if name not in ASSETS:
-        raise HTTPException(404, f"no such file. try one of: {', '.join(ASSETS)}")
+        raise HTTPException(404, f"A card has no {name}. Ask for {', '.join(ASSETS)}.")
     job = await _known_card(db, card_id)
     path = storage.asset_path(card_id, name)
     if not path.is_file():
-        raise HTTPException(404, f"{name} is not ready. the card is {job.status}")
+        raise HTTPException(404, f"{name} is not ready yet. The card is {job.status}.")
     return FileResponse(path, media_type=ASSETS[name], headers=NO_STORE)
 
 
@@ -261,4 +359,5 @@ __all__ = [
     "parse_stats",
     "parse_style",
     "router",
+    "unusable_request",
 ]

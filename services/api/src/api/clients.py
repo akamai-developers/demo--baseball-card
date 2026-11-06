@@ -33,8 +33,9 @@ class Reply:
 
 
 def _check(response: httpx.Response, name: str) -> None:
+    """`name` is how a sentence calls the service: the cutout service."""
     if response.status_code == 401:
-        raise ServiceError(f"{name} rejected the api key")
+        raise ServiceError(f"{name} refused the api's key")
     if response.status_code >= 400:
         raise ServiceError(f"{name} answered HTTP {response.status_code}")
 
@@ -46,7 +47,7 @@ async def post_cutout(client: httpx.AsyncClient, base: str, key: str, photo: byt
         headers=auth_headers(key),
         files={"image": ("photo.jpg", photo, "image/jpeg")},
     )
-    _check(response, "cutout")
+    _check(response, "the cutout service")
     return Reply(response.content, read_model_headers(response.headers))
 
 
@@ -57,7 +58,7 @@ async def post_art(client: httpx.AsyncClient, base: str, key: str, payload: dict
     service sends. None when it sends no such header, or one that is neither.
     """
     response = await client.post(f"{base}/art/generate", headers=auth_headers(key), json=payload)
-    _check(response, "art")
+    _check(response, "the art service")
     meta = read_model_headers(response.headers)
     source = response.headers.get(ART_SOURCE)
     meta["source"] = source if source in SOURCES else None
@@ -74,11 +75,11 @@ async def post_chat(
     response = await client.post(
         f"{base}/v1/chat/completions", headers=auth_headers(key), json=payload
     )
-    _check(response, "llm")
+    _check(response, "the text model")
     try:
         body = response.json()
     except ValueError as exc:
-        raise ServiceError("llm did not return JSON") from exc
+        raise ServiceError("the text model did not answer in JSON") from exc
     meta = read_model_headers(response.headers)
     meta["model"] = meta["model"] or body.get("model")
     return body, meta

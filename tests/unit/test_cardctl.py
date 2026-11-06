@@ -123,9 +123,31 @@ def test_a_401_tells_you_which_key_to_check() -> None:
         check(httpx.Response(401), "POST /cards")
 
 
-def test_a_500_carries_the_detail_through() -> None:
-    with pytest.raises(Problem, match="the photo is empty"):
-        check(httpx.Response(400, json={"detail": "the photo is empty"}), "POST /cards")
+def test_a_400_carries_the_detail_through() -> None:
+    with pytest.raises(Problem, match="The photo is empty."):
+        check(httpx.Response(400, json={"detail": "The photo is empty."}), "POST /cards")
+
+
+def test_the_gateways_413_says_the_limit() -> None:
+    """Caddy cuts a body over 20 MB off, and its Caddyfile answers in the api's shape."""
+    said = "The request is over the gateway's 20 MB limit. Send a smaller photo."
+    with pytest.raises(Problem) as problem:
+        check(httpx.Response(413, json={"detail": said}), "POST /cards")
+    assert str(problem.value) == f"POST /cards failed: HTTP 413. {said}"
+
+
+@pytest.mark.parametrize("status", [502, 503, 504])
+def test_a_gateway_with_no_api_behind_it_says_where_to_look(status) -> None:
+    with pytest.raises(Problem, match="make logs, or make gpu-logs on the node"):
+        check(httpx.Response(status), "POST /cards")
+
+
+def test_an_answer_that_is_not_the_apis_shape_is_still_read() -> None:
+    """A list for a body, or a detail that is a list, as another server might send."""
+    with pytest.raises(Problem, match=r"HTTP 400\. \[1\]"):
+        check(httpx.Response(400, json=[1]), "POST /cards")
+    with pytest.raises(Problem, match="HTTP 429. Too many wrong keys"):
+        check(httpx.Response(429, json={"detail": [{"msg": "x"}]}), "POST /cards")
 
 
 def test_a_200_is_quiet() -> None:
@@ -249,7 +271,7 @@ def test_a_deleted_card_says_the_api_does_not_have_it(capsys) -> None:
     """Someone deleted the card in the app while cardctl waited for it."""
     from cardctl.main import wait_for
 
-    gone = httpx.Response(404, json={"detail": "no such card"})
+    gone = httpx.Response(404, json={"detail": "There is no such card."})
     transport = httpx.MockTransport(lambda request: gone)
     with httpx.Client(transport=transport) as client, pytest.raises(Problem, match="no such card"):
         wait_for(client, "http://node", {}, "abc", timeout=5)

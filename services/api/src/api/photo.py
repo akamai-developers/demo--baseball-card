@@ -50,10 +50,11 @@ class Prepared:
 def prepare(raw: bytes, *, max_bytes: int, max_px: int) -> Prepared:
     """Validate, strip, downscale. Returns the JPEG and its scale, or raises PhotoError."""
     if not raw:
-        raise PhotoError("the photo is empty")
+        raise PhotoError("The photo is empty.")
     if len(raw) > max_bytes:
-        megabytes = max_bytes / 1_000_000
-        raise PhotoError(f"the photo is larger than {megabytes:.0f} MB")
+        # The route reads one byte past the limit and no further, so the size of
+        # the whole photo is not known here.
+        raise PhotoError(f"The photo is over the {max_bytes / 1_000_000:g} MB limit.")
 
     try:
         with Image.open(io.BytesIO(raw)) as opened:
@@ -64,11 +65,12 @@ def prepare(raw: bytes, *, max_bytes: int, max_px: int) -> Prepared:
             image = ImageOps.exif_transpose(opened) or opened
             image = image.convert("RGB")
     except UnidentifiedImageError as exc:
-        raise PhotoError("that file is not an image Pillow can read") from exc
+        raise PhotoError("That file is not a photo. Send a JPEG, PNG or WebP.") from exc
     except Image.DecompressionBombError as exc:
-        raise PhotoError("the photo decodes to too many pixels") from exc
+        raise PhotoError("The photo has too many pixels to open. Send a smaller one.") from exc
     except OSError as exc:
-        raise PhotoError(f"the photo could not be decoded: {exc}") from exc
+        message = f"The photo could not be opened ({exc}). Save it again as a JPEG and send that."
+        raise PhotoError(message) from exc
 
     scale = 1.0
     if max(image.size) > max_px:

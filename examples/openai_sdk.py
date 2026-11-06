@@ -68,7 +68,7 @@ def main() -> int:
             ],
             max_tokens=200,  # the longest the answer may be, in tokens
             temperature=0.7,  # 0 gives the same answer every time
-            stream=True,  # print the words as they arrive
+            stream=True,  # show the words as they arrive
         )
         for chunk in stream:
             if chunk.choices:

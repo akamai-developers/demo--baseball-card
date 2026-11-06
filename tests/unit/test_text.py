@@ -14,6 +14,7 @@ import re
 import httpx
 import pytest
 
+from api.clients import ServiceError
 from api.text import (
     EXAMPLES,
     LIMITS,
@@ -623,8 +624,8 @@ MADE_UP = (
     [
         # Word for word, a back Gemma wrote on the node on 2026-09-24. 142.7 is
         # nowhere in the facts.
-        "Ka'Ni tracks the ball in 155 ms. The 14 degree launch angle produces line "
-        "drives. A 9 degree attack angle keeps the ball low. 142.7 total power.",
+        "Ka'Ni tracks the ball in 155 ms. The 14 degree launch angle produces "
+        "line drives. A 9 degree attack angle keeps the ball low. 142.7 total power.",
         # And one from the probe the same day: the two numbers, added up.
         "Ka'Ni swings the bat at 72.0 mph. The ball leaves the wood at 93.0 mph. "
         "A 165.0 total output.",
@@ -1626,7 +1627,7 @@ async def test_a_retry_that_works_is_used() -> None:
 async def test_a_401_falls_back_without_raising() -> None:
     result = await run(httpx.Response(401, json={"detail": "no"}))
     assert not result.from_model
-    assert "rejected the api key" in result.error
+    assert "refused the api's key" in result.error
     assert [attempt["answer"] for attempt in result.meta["tries"]] == [None, None]
 
 
@@ -1650,3 +1651,18 @@ async def test_a_connection_failure_falls_back() -> None:
         result = await generate(client, "http://llm", KEY, "a-model", STATS)
     assert not result.from_model
     assert "ConnectError" in result.error
+    # The pipeline reads the cause to say the model is down, not that it wrote badly.
+    assert isinstance(result.cause, httpx.ConnectError)
+
+
+async def test_an_answer_that_fails_its_checks_has_no_cause() -> None:
+    """The model was reached. What it wrote is the problem, not the connection."""
+    result = await run(completion("this is not json"))
+    assert (result.from_model, result.cause) == (False, None)
+
+
+async def test_a_last_try_that_reached_the_model_clears_the_first_ones_cause() -> None:
+    result = await run(httpx.Response(500, text="boom"), completion("this is not json"))
+    assert (result.from_model, result.cause) == (False, None)
+    one = await run(completion("this is not json"), httpx.Response(500, text="boom"))
+    assert isinstance(one.cause, ServiceError)

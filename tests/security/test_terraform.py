@@ -164,7 +164,7 @@ def test_the_firewall_drops_by_default_and_attaches_to_the_node() -> None:
     source = (TF_DIR / "main.tf").read_text()
     assert 'inbound_policy  = "DROP"' in source
     assert "linodes = [linode_instance.node.id]" in source
-    # Legacy config interfaces, so the firewall binds to the instance itself.
+    # Interfaces on the configuration profile, so the firewall binds to the instance.
     assert 'interface_generation = "legacy_config"' in source
 
 

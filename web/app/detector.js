@@ -6,7 +6,7 @@
  * the same script, so the page never asks a CDN for anything.
  *
  * web/vendor is gitignored, so an api run from a fresh clone has no files and
- * the import 404s. The vendored wasm build is also the SIMD one, so a browser
+ * the import 404s. The pinned wasm build is also the SIMD one, so a browser
  * without WebAssembly SIMD fails the same way. Neither is fatal: the camera
  * keeps its preview and its shutter button and drops the guide, and a photo
  * goes without a face box.

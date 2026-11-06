@@ -7,6 +7,7 @@ GPU hiccups is worse than a demo with a plain background.
 
 from __future__ import annotations
 
+import asyncio
 import io
 import json
 import threading
@@ -16,6 +17,7 @@ import pytest
 from PIL import Image
 
 from api import pipeline as pipeline_module
+from api.clients import ServiceError
 from api.db import Database
 from api.pipeline import ASSET_NAMES, STEPS, Pipeline
 from api.storage import Storage
@@ -585,6 +587,103 @@ async def test_the_intermediates_are_kept_for_debugging(parts, monkeypatch) -> N
     assert (storage.work_dir(CARD_ID) / "art.png").is_file()
 
 
+# -- a service that does not answer -----------------------------------------
+
+NAMED = {"cutout": "The cutout service", "art": "The art service", "text": "The text model"}
+
+
+def answering(*, but: str) -> httpx.MockTransport:
+    """Every model service answering well, but one, which refuses the connection."""
+    answers = {
+        "cutout": httpx.Response(200, content=framed_cutout()),
+        "art": httpx.Response(200, content=png((64, 88))),
+        "text": TEXT_REPLY,
+    }
+    del answers[but]
+    return routes(**answers)
+
+
+@pytest.mark.parametrize("down", ["cutout", "art", "text"])
+async def test_a_service_that_is_down_is_named_and_the_card_still_comes_out(
+    parts, monkeypatch, down
+) -> None:
+    """The row says what the service did. The one warning says what the card got
+    instead and where the log is, in words a person can act on."""
+    pipeline, db, storage = parts
+    stub_render(monkeypatch, storage)
+    use(monkeypatch, answering(but=down))
+    await pipeline.run()
+
+    job = db.get_job(CARD_ID)
+    assert job.status == "done"
+    assert step_named(db, down).error == f"{NAMED[down]} is not answering."
+    instead = pipeline_module.INSTEAD[down]
+    assert job.warnings == [f"{NAMED[down]} is not answering, {instead}. make logs says why."]
+
+
+async def test_on_the_node_the_warning_names_the_nodes_logs(parts, monkeypatch) -> None:
+    pipeline, db, storage = parts
+    monkeypatch.setattr(pipeline.settings, "backend", "real")
+    stub_render(monkeypatch, storage)
+    use(monkeypatch, answering(but="art"))
+    await pipeline.run()
+    assert db.get_job(CARD_ID).warnings[0].endswith(". make gpu-logs says why.")
+
+
+async def test_a_slow_text_model_gets_the_template_and_says_how_long_it_waited(
+    parts, monkeypatch
+) -> None:
+    """vLLM that takes longer than STEP_TIMEOUT_S. The card does not wait for ever."""
+    pipeline, db, _ = parts
+    monkeypatch.setattr(pipeline.settings, "step_timeout_s", 1)
+
+    async def slow(*args, **kwargs):
+        await asyncio.sleep(5)
+
+    monkeypatch.setattr(pipeline_module, "generate", slow)
+    async with httpx.AsyncClient(transport=routes()) as client:
+        written = await pipeline.text(client)
+
+    assert written.nickname == "Line Drive"
+    step = step_named(db, "text")
+    assert (step.status, step.error) == ("failed", "The text model did not answer in 1 s.")
+    assert db.get_job(CARD_ID).warnings == [
+        "The text model did not answer in 1 s, so the back has the template's words. "
+        "make logs says why."
+    ]
+
+
+async def test_text_that_fails_its_checks_leaves_no_warning(parts) -> None:
+    """The model answered. Its words could not go on the card, which the row says,
+    and nothing is down, so there is nothing to look for in a log."""
+    pipeline, db, _ = parts
+    praised = chat({"nickname": "Rivera", "tagline": "A solid bat", "blurb": "Great hands."})
+    async with httpx.AsyncClient(transport=routes(text=praised)) as client:
+        await pipeline.text(client)
+    assert step_named(db, "text").status == "failed"
+    assert db.get_job(CARD_ID).warnings == []
+
+
+@pytest.mark.parametrize(
+    ("problem", "said"),
+    [
+        (httpx.ConnectError("refused"), "The art service is not answering"),
+        (httpx.ConnectTimeout("slow"), "The art service is not answering"),
+        (httpx.ReadTimeout("slow"), "The art service did not answer in 120 s"),
+        (TimeoutError(), "The art service did not answer in 120 s"),
+        (httpx.RemoteProtocolError("gone"), "The art service dropped the connection"),
+        (ServiceError("the art service answered HTTP 503"), "The art service answered HTTP 503"),
+        (
+            OSError("cannot identify image file"),
+            "The art service sent back something that is not an image",
+        ),
+        (ValueError("odd"), "The art service failed with ValueError: odd"),
+    ],
+)
+def test_what_a_service_did_is_said_in_words(problem, said) -> None:
+    assert pipeline_module.unanswered("art", problem, 120) == said
+
+
 # -- photo qa ----------------------------------------------------------------
 
 
@@ -828,7 +927,11 @@ async def test_a_failed_cutout_only_repeats_what_the_browser_found(
 
     job = db.get_job(CARD_ID)
     assert job.status == "done"
-    assert job.warnings == said
+    failed = (
+        "The cutout service answered HTTP 500, so the card shows the background "
+        "without the person. make logs says why."
+    )
+    assert job.warnings == [failed, *said]
     assert "face" not in calls[0]
 
 

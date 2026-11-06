@@ -60,7 +60,7 @@ UNKNOWN = [
     "/art",
     "/art/healthz",
     "/cutout/healthz",
-    "/cards/abc123def456ghi789/print.jpg",
+    "/cards/abc123def456ghi789/photo.jpg",
 ]
 
 # One cheap authenticated call per service that keeps a limiter. The two

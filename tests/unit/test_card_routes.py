@@ -113,13 +113,95 @@ def test_an_unknown_stats_field_is_a_400(client: TestClient) -> None:
 def test_a_field_the_card_does_not_know_is_refused_by_its_name(client: TestClient) -> None:
     response = post(client, '{"name": "Sam", "team": "Riverside Owls"}')
     assert response.status_code == 400
-    assert "team: Extra inputs are not permitted" in response.json()["detail"]
+    assert response.json()["detail"].startswith("team is not part of a card. It takes name,")
+
+
+TAKES = "It takes name, number, position, bats, throws, height_in, weight_lb, hometown, metrics."
+
+
+@pytest.mark.parametrize(
+    ("stats", "said"),
+    [
+        ({"number": 23}, "The card needs a name."),
+        ({"name": "   "}, "The name is empty. The card needs one."),
+        ({"name": "N" * 61}, "The name is 61 characters. It can be 60 at most."),
+        ({"name": None}, "The name has to be text."),
+        ({"name": "Sam", "number": 120}, "The number is 120. It has to be from 0 to 99."),
+        ({"name": "Sam", "number": -1}, "The number is -1. It has to be from 0 to 99."),
+        (
+            {"name": "Sam", "number": 7.5},
+            "The number is 7.5. It has to be a whole number from 0 to 99.",
+        ),
+        (
+            {"name": "Sam", "number": "x"},
+            'The number is "x". It has to be a whole number from 0 to 99.',
+        ),
+        ({"name": "Sam", "height_in": 30}, "Height is 30 in. It has to be from 36 to 96 in."),
+        ({"name": "Sam", "weight_lb": 900}, "Weight is 900 lb. It has to be from 60 to 500 lb."),
+        ({"name": "Sam", "bats": "X"}, 'Bats is "X". Use R, L or S.'),
+        ({"name": "Sam", "throws": "S"}, 'Throws is "S". Use R or L.'),
+        (
+            {"name": "Sam", "position": "SSSSS"},
+            "The position is 5 characters. It can be 4 at most.",
+        ),
+        (
+            {"name": "Sam", "hometown": "H" * 61},
+            "The hometown is 61 characters. It can be 60 at most.",
+        ),
+        (
+            {"name": "Sam", "metrics": {"bat_speed_mph": 99}},
+            "Bat Speed is 99 mph. It has to be from 50 to 85 mph.",
+        ),
+        (
+            {"name": "Sam", "metrics": {"bat_speed_mph": "fast"}},
+            'Bat Speed is "fast". It has to be a number from 50 to 85 mph.',
+        ),
+        (
+            {"name": "Sam", "metrics": [72]},
+            'metrics has to be an object of numbers, such as {"bat_speed_mph": 71.5}.',
+        ),
+        ({"name": "Sam", "jersey": 5}, f"jersey is not part of a card. {TAKES}"),
+        ([1, 2], 'The stats have to be a JSON object, such as {"name": "Sam Rivera"}.'),
+    ],
+)
+def test_stats_that_will_not_do_get_a_sentence_that_says_how_to_fix_them(
+    client: TestClient, stats, said
+) -> None:
+    """The words the app shows under Generate, and cardctl prints. Each names the
+    field as the form labels it, what was sent, and what it can be."""
+    response = post(client, json.dumps(stats))
+    assert (response.status_code, response.json()["detail"]) == (400, said)
+
+
+def test_every_problem_in_the_stats_is_said_at_once(client: TestClient) -> None:
+    response = post(client, json.dumps({"name": "Sam", "number": 120, "height_in": 30}))
+    assert response.json()["detail"] == (
+        "The number is 120. It has to be from 0 to 99. "
+        "Height is 30 in. It has to be from 36 to 96 in."
+    )
+
+
+def test_a_post_without_its_photo_or_its_stats_says_which(client: TestClient) -> None:
+    """FastAPI's own answer is a 422 and a list of dictionaries. This is a 400
+    and the sentences, like every other form the api cannot use."""
+    no_photo = client.post("/cards", headers=AUTH, data={"stats": '{"name": "Sam"}'})
+    assert (no_photo.status_code, no_photo.json()["detail"]) == (
+        400,
+        "The photo is missing. Send it as a file in a form field named photo.",
+    )
+    no_stats = client.post("/cards", headers=AUTH, files={"photo": ("me.jpg", photo())})
+    assert no_stats.json()["detail"] == (
+        "The stats are missing. Send them as JSON in a form field named stats, "
+        'such as {"name": "Sam Rivera"}.'
+    )
+    as_text = client.post("/cards", headers=AUTH, data={"stats": "{}", "photo": "me.jpg"})
+    assert "The photo has to be a file, not text." in as_text.json()["detail"]
 
 
 def test_the_style_is_its_own_field_and_not_part_of_the_stats(client: TestClient) -> None:
     response = post(client, '{"name": "Sam", "style": "classic"}')
     assert response.status_code == 400
-    assert "style: Extra inputs are not permitted" in response.json()["detail"]
+    assert response.json()["detail"].startswith("style is not part of a card.")
 
 
 @pytest.mark.parametrize("style", ["akamai", "classic"])
@@ -142,21 +224,21 @@ def test_a_style_that_is_not_one_is_a_400_and_makes_no_card(client: TestClient, 
     before = client.app.state.db.count()
     response = post(client, '{"name": "Sam"}', style=style)
     assert response.status_code == 400
-    assert response.json()["detail"] == "style is not usable: use one of akamai, classic"
+    assert response.json()["detail"] == f'There is no style "{style}". Use akamai or classic.'
     assert client.app.state.db.count() == before
 
 
 def test_something_that_is_not_an_image_is_a_400(client: TestClient) -> None:
     response = post(client, '{"name": "Sam"}', image=b'{"oops": "the stats file"}')
     assert response.status_code == 400
-    assert "not an image" in response.json()["detail"]
+    assert response.json()["detail"] == "That file is not a photo. Send a JPEG, PNG or WebP."
 
 
 def test_an_oversize_photo_is_a_400(client: TestClient, clean_settings) -> None:
     too_big = b"\xff\xd8\xff" + b"x" * (clean_settings.max_upload_mb * 1_000_000)
     response = post(client, '{"name": "Sam"}', image=too_big)
     assert response.status_code == 400
-    assert "larger than" in response.json()["detail"]
+    assert response.json()["detail"] == "The photo is over the 15 MB limit."
 
 
 def test_the_stored_photo_is_downscaled(client: TestClient, clean_settings) -> None:
@@ -261,7 +343,7 @@ def test_a_side_under_16_px_after_scaling_is_a_400(client: TestClient) -> None:
 def test_a_face_field_that_is_not_json_is_a_400(client: TestClient) -> None:
     response = post(client, '{"name": "Sam"}', face="{x: 1}")
     assert response.status_code == 400
-    assert response.json()["detail"].startswith("face is not valid JSON")
+    assert response.json()["detail"].startswith("The face field is not valid JSON")
 
 
 # -- read --------------------------------------------------------------------
@@ -349,7 +431,7 @@ def test_the_front_is_served_while_the_back_is_still_being_drawn(
             assert (front.status_code, front.content) == (200, b"front")
             back = client.get(f"/cards/{card_id}/back.png", headers=AUTH)
             assert back.status_code == 404
-            assert back.json()["detail"] == "back.png is not ready. the card is running"
+            assert back.json()["detail"] == "back.png is not ready yet. The card is running."
         finally:
             finish.set()
         job = wait(client, card_id)

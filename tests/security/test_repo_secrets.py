@@ -1,8 +1,9 @@
 """Nothing secret is in the repo, and nothing secret can be added to it by accident.
 
 Every file git would commit, tracked or not yet added, is read for anything
-shaped like a key, a token or a private key. The files that hold real secrets
-on a working box are held to .gitignore.
+shaped like a key, a token or a private key, and so is every commit in the
+history: a secret committed once and deleted later is still in every clone.
+The files that hold real secrets on a working box are held to .gitignore.
 """
 
 from __future__ import annotations
@@ -10,11 +11,10 @@ from __future__ import annotations
 import re
 import shutil
 import subprocess
-from pathlib import Path
 
 import pytest
 
-from tests.conftest import REPO_ROOT, dotenv_value, refute_key
+from tests.conftest import REPO_ROOT, committable, dotenv_value, refute_key, text_of
 
 pytestmark = pytest.mark.skipif(
     shutil.which("git") is None or not (REPO_ROOT / ".git").exists(),
@@ -38,27 +38,6 @@ SHAPES = {
 # A sha256 in a lock file is 64 hex characters and no secret. Terraform's lock
 # writes the provider's zip hashes as zh: and 64 hex characters.
 HASH = re.compile(r"(?:sha256[:=]\s*|\bzh:)[0-9a-f]{64}")
-
-
-def committable() -> list[Path]:
-    """Tracked files, and untracked ones .gitignore does not hide."""
-    listed = subprocess.run(
-        ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout
-    paths = [REPO_ROOT / name for name in listed.split("\0") if name]
-    return sorted(path for path in paths if path.is_file())
-
-
-def text_of(path: Path) -> str | None:
-    """The file as text, or None for a binary one."""
-    data = path.read_bytes()
-    if b"\0" in data[:8192]:
-        return None
-    return data.decode("utf-8", errors="replace")
 
 
 def found_in(text: str) -> list[str]:
@@ -107,6 +86,55 @@ def test_no_committable_file_holds_this_boxs_key() -> None:
         text = text_of(path)
         if text is not None:
             refute_key(text, key, str(path.relative_to(REPO_ROOT)))
+
+
+# ---- the history ---------------------------------------------------------------
+
+
+def git(*args: str, stdin: str | None = None) -> str:
+    return subprocess.run(
+        ["git", *args], cwd=REPO_ROOT, input=stdin, capture_output=True, text=True, errors="replace"
+    ).stdout
+
+
+def commits() -> list[str]:
+    """Every commit on every branch and tag, oldest first."""
+    return git("rev-list", "--all", "--reverse").split()
+
+
+def shown(commit: str) -> str:
+    """A commit's message and its patch. A binary file's patch is one line saying so."""
+    return git("show", "-m", "--no-color", "--no-ext-diff", "--format=%B", commit)
+
+
+def test_the_history_has_commits_to_read() -> None:
+    """So the two tests below cannot pass by reading nothing."""
+    assert commits(), "git rev-list --all found no commit"
+    assert "diff --git a/" in shown(commits()[-1])
+
+
+def test_no_commit_ever_held_anything_shaped_like_a_secret() -> None:
+    hits = [f"{commit[:12]}: {shape}" for commit in commits() for shape in found_in(shown(commit))]
+    assert hits == []
+
+
+def test_no_commit_ever_held_this_boxs_key() -> None:
+    key = dotenv_value("CARD_API_KEY")
+    if not key:
+        pytest.skip("no CARD_API_KEY in .env, so there is nothing to look for")
+    for commit in commits():
+        refute_key(shown(commit), key, f"commit {commit[:12]}")
+
+
+def test_no_commit_ever_added_a_file_that_gitignore_keeps_out() -> None:
+    """.env, secrets/, Terraform state and the rest: not once, in any commit."""
+    added = git("log", "--all", "--format=", "--name-only", "--diff-filter=A")
+    paths = sorted({line for line in added.splitlines() if line})
+    assert paths, "git log found no file ever added"
+    assert git("check-ignore", "--no-index", "--stdin", stdin="\n".join(paths)).split() == []
+
+
+# ---- what stays out of git --------------------------------------------------------
 
 
 @pytest.mark.parametrize(

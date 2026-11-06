@@ -283,6 +283,8 @@ and `secrets/ssh/` stay, and the next `make deploy` reuses both.
 | `the node never reported ready` | The driver install failed or took over 30 minutes. `make ssh`, then `sudo tail -100 /var/log/baseball-card-bootstrap.log`. |
 | `nvidia-smi lists 0 GPUs` | The driver did not load. The same log, then `make destroy` and deploy again. |
 | `the stack did not report healthy` | A model is still loading or failed to. `make gpu-logs`. |
+| A card's warning: `The art service is not answering, so the stadium is drawn instead of painted` | The card came out without that model. `make gpu-logs` says why, and `make check` shows which service is down. The same goes for the cutout service and the text model. |
+| A card's warning: `The text model did not answer in 180 s` | vLLM is busy or stuck. `make gpu-logs`. `STEP_TIMEOUT_S` in `.env` sets how long a card waits for it, and `make deploy` sends a new one to the node. |
 | `nothing answered http://localhost:8443/livez` | `make tunnel` in another terminal, or `DOMAIN` in `.env` for domain mode. |
 | `something is already listening on localhost:8443` | The mock stack: `make down`. Or set `GATEWAY_PORT` to a free port. |
 | `REMOTE HOST IDENTIFICATION HAS CHANGED` | The node's host key changed under the scripts, and they stop on purpose. If you replaced the node outside `make deploy`, remove its line from `secrets/ssh/known_hosts`. |
