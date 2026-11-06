@@ -82,7 +82,8 @@ If your user needs `sudo` for Docker, say so once per command:
 `DOCKER="sudo -E docker" make up-mock`. If port 8443 is taken, set
 `GATEWAY_PORT` in `.env`. The first `make up-mock` builds five images and
 downloads the browser's 12 MB face detector, which takes a few minutes. After
-that it takes seconds.
+that it takes seconds. The first `make card-mock` has uv make `.venv` and
+install the Python side into it, about 450 MB.
 
 `make card-mock` posts `tests/fixtures/portrait.jpg` and `examples/stats.json`
 to the stack, waits for the card, and prints the ledger:
@@ -194,9 +195,9 @@ make card-cpu-cutout PHOTO=me.jpg     # yours, on any background
 
 The first run builds a 1.8 GB torch image and downloads 444 MB of weights into
 the `hf-cache` volume. On the 16-core box this repo was built on, a photo then
-takes 15 to 25 seconds. The ledger says `ZhengPeng7/BiRefNet` on `local-cpu`,
-and the back of the card says no GPU was used. `make up-mock` puts the matte
-back.
+takes 12 to 25 seconds to cut out. The ledger says `ZhengPeng7/BiRefNet` on
+`local-cpu`, and the back of the card says no GPU was used. `make up-mock` puts
+the matte back.
 
 ## on Akamai Cloud
 

@@ -1,6 +1,6 @@
 [project]
 name = "card-comps"
-version = "0.6.0"
+version = "0.8.0"
 description = "Nearest-neighbour comps over a table of Statcast hitters, and the script that fetches it."
 requires-python = ">=3.12"
 dependencies = [

@@ -4,6 +4,62 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The version is the
 one `packages/common` reports, and every `pyproject.toml` carries it.
 
+## [0.8.0] - 2026-11-06
+
+Hardening, a fresh clone, and every command in the docs run once more. The
+run on a real GPU node has not happened, so there is no 0.7.0, and nothing in
+this release has run on a node.
+
+### Changed
+
+- A post the api cannot use gets a sentence that says what to change. A stats
+  field is named as the app's form names it, with what was sent and what it
+  can be: `The number is 120. It has to be from 0 to 99.` Every problem in
+  the stats is said at once.
+- A form without its `photo` or `stats` field is a 400 with a sentence, where
+  FastAPI sent a 422 and a list.
+- The photo's errors and the 404s are sentences: `That file is not a photo.
+  Send a JPEG, PNG or WebP.`, `The photo is over the 15 MB limit.`
+- A model service that does not answer, or not within `STEP_TIMEOUT_S`, leaves
+  its step a sentence, `The art service is not answering.`, where it left the
+  exception. The job gets a warning that says what the card got instead and
+  where the log is: `make logs` on a laptop, `make gpu-logs` on the node. The
+  app shows it beside the ledger, and cardctl prints it. Text that fails its
+  checks leaves no warning, because the model did answer.
+- Caddy answers a body over 20 MB with a 413 and a JSON `detail`. It sent an
+  empty body.
+- cardctl prints that sentence, and has words of its own for a 429 and for a
+  gateway whose api is down.
+- README's status table is now "what has run, and where".
+
+### Added
+
+- `tests/unit/test_cut_list.py`: the parts of the event build this repo was
+  cut from stay out. Every file git would commit is read for the words they
+  went by, and each innocent use is a pattern with its reason. File names and
+  the markers of unfinished work are checked too.
+- The secret scan reads every commit in the history, message and patch, holds
+  this box's key to it, and checks that no ignored file was ever committed.
+- Tests for each sentence, a service down or slow, the gateway's 413 and
+  cardctl's words.
+- `examples/curl.md` shows a refused post. DEPLOY.md's "when it goes wrong"
+  has the two new warnings.
+
+### Removed
+
+- A CSS token and a test fixture nothing used.
+
+### Notes
+
+- A clone of this commit ran the README's quick start as written, under its
+  own compose project on port 8446: `make up-mock` in 78 s with this box's
+  Docker cache warm, `make card-mock` in 2.2 s. The first `make card-mock`
+  also made `.venv`, 439 MB, which the README now says.
+- `make gpu-check` at 23:50 UTC: the same six regions as at 22:28 could sell
+  both plans.
+- `make card-cpu-cutout` again: BiRefNet on this box's CPU cut the test photo
+  out in 12,303 ms, and the card took 14.2 s.
+
 ## [0.6.0] - 2026-11-06
 
 The deploy to Akamai Cloud, built and tested here without the cloud.

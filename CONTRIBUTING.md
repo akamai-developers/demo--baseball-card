@@ -153,7 +153,18 @@ and `services/vision-base.Dockerfile` installs the CUDA build of the same
 version on the node. A torch upgrade changes both, and
 `tests/unit/test_vision_base.py` fails until they agree.
 
+## what stays out
+
+This repo was cut from a bigger event build, and
+`tests/unit/test_cut_list.py` keeps the parts that were left behind out: it
+reads every file for the words they went by, and for the markers of
+unfinished work. A word with an innocent use, such as the verb "share" or Python's
+`print(`, passes because a pattern in `ALLOWED` explains it. A new innocent
+use gets a pattern there, with its reason.
+
 ## secrets
 
 Never commit `.env`, anything under `secrets/`, Terraform state or `*.tfvars`.
-`tests/security/test_repo_secrets.py` fails on a file shaped like a key.
+`tests/security/test_repo_secrets.py` fails on a file shaped like a key, in
+the tree or in any commit of the history. Deleting a committed secret leaves
+it in every clone, so rotate it first.
