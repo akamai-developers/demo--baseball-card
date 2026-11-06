@@ -11,6 +11,11 @@ uv sync           # the workspace and its dev tools, from uv.lock
 make test         # every test but the slow ones
 ```
 
+`make test` installs Playwright's Chromium first, once, into Playwright's own
+cache: the card's tests draw real cards with it. On Linux, if Chromium will
+not start, `uv run playwright install-deps chromium` installs the system
+libraries it needs, with `sudo`.
+
 The unit tests run anywhere. The integration tests need the mock stack, and
 skip with a reason when it is not up:
 
@@ -31,6 +36,21 @@ Makefile and the tests all read it.
 ```bash
 make lint         # ruff check and ruff format --check
 uv run ruff format .   # to fix the format
+```
+
+## the README's picture
+
+`docs/card-front.jpg` and `docs/card-back.jpg` are the two PNGs of
+`make card-fixture` at half size. A change that shows on either side of the
+card makes them again:
+
+```bash
+make card-fixture
+uv run python -c "
+from PIL import Image
+for side in ('front', 'back'):
+    Image.open(f'out/card-{side}.png').convert('RGB').resize((750, 1050), Image.LANCZOS).save(
+        f'docs/card-{side}.jpg', quality=88, optimize=True, progressive=True)"
 ```
 
 ## versions

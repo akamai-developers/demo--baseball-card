@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block card %}
+<div class="card">
+  <div class="window back">
+
+    <header>
+      <div class="who">
+        <div class="name" data-fit data-fit-floor="0.17">{{ name }}</div>
+      </div>
+      {% if number is not none %}<div class="number">{{ number }}</div>{% endif %}
+    </header>
+
+    {% if bio %}
+    <div class="bio">
+      {%- for item in bio -%}
+      {%- if not loop.first %}<span class="sep">/</span>{% endif -%}
+      {{ item }}
+      {%- endfor -%}
+    </div>
+    {% endif %}
+
+    {% if text.nickname or text.tagline %}
+    <section class="hype">
+      {% if text.nickname %}<div class="nickname" data-fit>&ldquo;{{ text.nickname }}&rdquo;</div>{% endif %}
+      {% if text.tagline %}<div class="tagline">{{ tagline }}</div>{% endif %}
+    </section>
+    {% endif %}
+
+    {% if metrics or comps %}
+    <section class="cols">
+      {% if metrics %}
+      <div class="metrics">
+        <h2>{{ metrics_heading }}</h2>
+        <table>
+          {% for row in metrics %}
+          <tr>
+            <td>{{ row.label }}</td>
+            <td class="value">{{ row.value }}{% if row.unit %}<span class="unit">{{ row.unit }}</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% endif %}
+
+      {% if comps %}
+      <div class="comps">
+        <h2>{{ comps_heading }}</h2>
+        {% for comp in comps %}
+        <div class="comp">
+          <div class="line">
+            <div class="player">{{ comp.player }}<span class="season">{{ comp.season }}</span></div>
+            <div class="pct">{{ comp.percent }}%</div>
+          </div>
+          <div class="bar"><span style="width: {{ comp.percent }}%"></span></div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if text.blurb %}
+    <section class="scouting">
+      <h2>Scouting report</h2>
+      <p>{{ blurb }}</p>
+    </section>
+    {% endif %}
+
+    <footer class="provenance">
+      {% if steps %}
+      <table>
+        <thead>
+          <tr>
+            <th class="step">Step</th>
+            <th class="model">Model</th>
+            <th>License</th>
+            <th>Ran on</th>
+            <th class="ms">ms</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for step in steps %}
+          <tr>
+            <td class="step">{{ step.step }}</td>
+            <td class="model">{{ step.model }}{% if step.source %} · {{ step.source }}{% endif %}</td>
+            <td>{{ step.license }}</td>
+            <td>{{ step.ran_on }}</td>
+            <td class="ms">{{ step.ms }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      <div class="made">{{ made }}</div>
+    </footer>
+
+  </div>
+</div>
+{% endblock %}

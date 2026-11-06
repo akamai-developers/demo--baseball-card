@@ -99,6 +99,18 @@ uv run pytest tests/security/test_domain_mode.py -q
 grep -n 'max_size' Caddyfile
 ```
 
+## the card
+
+**The card's pages reach nothing.** Chromium draws each side from a page whose
+font, stylesheet, logo and pictures are inlined or written beside it on the
+local disk. A route handler refuses every http, https, ws and ftp request, and
+a card whose page tried one fails instead of being written. A name or a word a
+model wrote is escaped before it goes into the page.
+
+```bash
+uv run pytest tests/unit/test_card_render.py tests/unit/test_card_front.py -q -k "network or escaped"
+```
+
 ## not built yet
 
 These are the design. Each moves up to a claim with a command when it is built.

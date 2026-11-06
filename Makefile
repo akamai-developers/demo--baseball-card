@@ -27,7 +27,7 @@ export DOCKER GATEWAY_PORT GATEWAY
 # is up in seconds.
 WAIT_S ?= 90
 
-.PHONY: help env up-mock down logs ps test lint
+.PHONY: help env up-mock down logs ps card-fixture test lint
 
 # ---- On a laptop ----------------------------------------------------------
 # The mock stack: every service in Docker with stub models, behind Caddy on
@@ -80,10 +80,17 @@ logs: ## Follow the container logs
 ps: ## What is running
 	$(COMPOSE) --profile mock --profile gpu ps
 
+# The card on its own: no stack, no models. Playwright's Chromium draws it, and
+# the first run downloads it into Playwright's cache. STYLE=akamai or classic.
+card-fixture: ## Render the test photo's card into out/. No stack, no models. STYLE=
+	uv run playwright install chromium
+	uv run python -m card.render --fixture $(if $(STYLE),--style $(STYLE),)
+
 # ---- Development ----------------------------------------------------------
 # For changing this repo: the tests and the lint.
 
 test: ## Run the tests. The integration tests skip until make up-mock
+	uv run playwright install chromium
 	uv run pytest -q -m "not slow"
 
 lint: ## ruff, the rules and the format

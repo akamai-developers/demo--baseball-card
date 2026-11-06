@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ name }}</title>
+<style>
+{{ font_face|safe }}
+:root {
+{{ css_vars|safe }}
+}
+{{ base_css|safe }}
+</style>
+</head>
+<body class="{{ side }}">
+{% block card %}{% endblock %}
+<script>
+// Shrink a line until it fits instead of letting it run off the card. Runs once,
+// after the font is in, so two renders of the same card measure the same. It
+// stops at 0.38 of the size it started at, or at data-fit-floor of it, and
+// never goes under 16 px.
+function fitOneLine(el) {
+  var max = parseFloat(getComputedStyle(el).fontSize);
+  var min = Math.max(16, max * (parseFloat(el.getAttribute("data-fit-floor")) || 0.38));
+  var size = max;
+  while (size > min && el.scrollWidth > el.clientWidth + 1) {
+    size -= 1;
+    el.style.fontSize = size + "px";
+  }
+}
+document.fonts.ready.then(function () {
+  var nodes = document.querySelectorAll("[data-fit]");
+  for (var i = 0; i < nodes.length; i++) fitOneLine(nodes[i]);
+  // The renderer waits on this. Nothing is measured or painted after it.
+  window.__cardReady = 1;
+});
+</script>
+</body>
+</html>

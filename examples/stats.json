@@ -1,0 +1,18 @@
+{
+  "name": "Sam Rivera",
+  "number": 23,
+  "position": "SS",
+  "bats": "R",
+  "throws": "R",
+  "height_in": 72,
+  "weight_lb": 190,
+  "hometown": "Chicago, IL",
+  "metrics": {
+    "bat_speed_mph": 68.2,
+    "exit_velo_mph": 88.5,
+    "launch_angle_deg": 14.0,
+    "swing_length_ft": 7.1,
+    "attack_angle_deg": 9.0,
+    "time_to_contact_ms": 155
+  }
+}

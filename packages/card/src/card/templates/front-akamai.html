@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block card %}
+<div class="card front akamai">
+  <div class="window">
+    <img class="hero" src="{{ hero }}" alt="">
+    <div class="plate">
+      {% if number is not none %}<div class="number">{{ number }}</div>{% endif %}
+      <div class="who">
+        <div class="name" data-fit data-fit-floor="0.14">{{ name }}</div>
+        <div class="line">
+          <div class="role" data-fit>{{ role }}</div>
+          <img class="logo" src="{{ brand('akamai-logo-white.svg') }}" alt="Akamai">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

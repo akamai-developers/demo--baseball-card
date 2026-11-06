@@ -1,0 +1,34 @@
+{
+  "akamai": {
+    "label": "Akamai",
+    "art_prompt": "an empty baseball stadium at night, floodlight towers burning white, deep blue sky above the rim of the upper deck, green outfield grass, infield dirt raked clean, haze in the light beams, shallow depth of field, cinematic photograph",
+    "palette": {
+      "--frame": "#002f6c",
+      "--frame-edge": "#00a4eb",
+      "--accent": "#ff8b00",
+      "--plate-ink": "#ffffff",
+      "--plate-label": "#00a4eb",
+      "--paper": "#ffffff",
+      "--paper-ink": "#002f6c",
+      "--muted": "#5b6b85",
+      "--rule": "#cfe0ef",
+      "--panel": "#eaf4fb"
+    }
+  },
+  "classic": {
+    "label": "Classic",
+    "art_prompt": "an empty baseball ballpark on a bright summer afternoon, blue sky with scattered white clouds, sunlit green outfield grass, red brick outfield wall with ivy, empty bleachers, warm daylight, photograph",
+    "palette": {
+      "--frame": "#efe6cf",
+      "--frame-edge": "#c9b78f",
+      "--accent": "#b23a2c",
+      "--plate-ink": "#2b241c",
+      "--plate-label": "#7a6a52",
+      "--paper": "#fbf7ec",
+      "--paper-ink": "#2b241c",
+      "--muted": "#7a6d5b",
+      "--rule": "#e2d6bd",
+      "--panel": "#f3ecdb"
+    }
+  }
+}

@@ -1,0 +1,412 @@
+/* One stylesheet for both sides and both styles. The style supplies the colours
+   as custom properties, and render.py the sizes it shares with the compositor;
+   nothing here hard-codes a palette. Sizes are in px because the page is always
+   1500x2100, never responsive. */
+
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html,
+body {
+	width: var(--card-w);
+	height: var(--card-h);
+	overflow: hidden;
+	background: var(--frame);
+	font-family: "Instrument Sans", sans-serif;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: geometricPrecision;
+}
+
+.card {
+	width: var(--card-w);
+	height: var(--card-h);
+	padding: var(--frame-w);
+	background: var(--frame);
+	position: relative;
+}
+
+/* A hairline of the edge colour just inside the border. Cheap, and it is what
+   makes the thick border read as a card border instead of a mat. */
+.card::after {
+	content: "";
+	position: absolute;
+	inset: 26px;
+	border: 3px solid var(--frame-edge);
+	border-radius: 40px;
+	pointer-events: none;
+}
+
+.window {
+	width: var(--window-w);
+	height: var(--window-h);
+	border-radius: 30px;
+	overflow: hidden;
+	position: relative;
+	background: var(--paper);
+}
+
+/* ---------- front ----------
+   The picture fills the window above the name plate, at the size compose.py
+   made it, so what compose places is what the card shows. The plate is the
+   frame's own colour, so the frame reads as one piece round the picture, and
+   the person stands on the plate's top rule. */
+
+.front .window {
+	background: var(--frame);
+}
+
+.front .hero {
+	position: absolute;
+	left: 0;
+	top: 0;
+	display: block;
+	width: var(--window-w);
+	height: var(--picture-h);
+}
+
+.front .plate {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: var(--window-w);
+	height: var(--plate-h);
+	background: var(--frame);
+	border-top: 10px solid var(--frame-edge);
+	display: flex;
+	align-items: center;
+	gap: 44px;
+	padding: 0 64px;
+}
+
+.front .number {
+	flex: 0 0 auto;
+	font-weight: 700;
+	font-size: 180px;
+	line-height: 1;
+	letter-spacing: -4px;
+	font-variant-numeric: tabular-nums;
+	color: var(--accent);
+}
+
+.front .who {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/* The name has the plate's whole width. data-fit shrinks one too wide for it,
+   down to 16 px, so the longest name the api takes still fits. */
+.front .name {
+	font-weight: 700;
+	font-size: 112px;
+	line-height: 1.1;
+	letter-spacing: -1px;
+	text-transform: uppercase;
+	color: var(--plate-ink);
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+/* Under the name: the position, and on the akamai front the logo at the
+   right, centred on the same line. */
+.front .line {
+	display: flex;
+	align-items: center;
+	gap: 44px;
+	margin-top: 6px;
+}
+
+.front .role {
+	flex: 1 1 auto;
+	min-width: 0;
+	font-weight: 600;
+	font-size: 46px;
+	line-height: 1.2;
+	letter-spacing: 6px;
+	text-transform: uppercase;
+	color: var(--plate-label);
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+/* The Akamai mark, white on the navy plate, as the brand guide draws it. */
+.akamai .logo {
+	flex: 0 0 auto;
+	display: block;
+	width: 220px;
+	height: auto;
+}
+
+/* ---------- back ---------- */
+
+.back {
+	background: var(--paper);
+	color: var(--paper-ink);
+	padding: 54px 58px 44px;
+	display: flex;
+	flex-direction: column;
+	gap: 40px;
+}
+
+.back h2 {
+	font-weight: 600;
+	font-size: 30px;
+	letter-spacing: 7px;
+	text-transform: uppercase;
+	color: var(--muted);
+	margin-bottom: 14px;
+}
+
+.back header {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 30px;
+	border-bottom: 5px solid var(--frame-edge);
+	padding-bottom: 22px;
+}
+
+.back header .who {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/* data-fit shrinks a long name down to 16 px, as on the front. */
+.back header .name {
+	font-weight: 700;
+	font-size: 92px;
+	line-height: 1;
+	letter-spacing: -1px;
+	text-transform: uppercase;
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.back header .number {
+	font-weight: 700;
+	font-size: 96px;
+	line-height: 0.8;
+	color: var(--accent);
+	flex: 0 0 auto;
+}
+
+.bio {
+	font-size: 31px;
+	font-weight: 500;
+	letter-spacing: 2px;
+	text-transform: uppercase;
+	color: var(--paper-ink);
+	background: var(--panel);
+	border-radius: 14px;
+	padding: 26px 30px;
+}
+
+.bio .sep {
+	color: var(--muted);
+	padding: 0 12px;
+}
+
+.hype .nickname {
+	font-weight: 700;
+	font-size: 86px;
+	line-height: 1;
+	text-transform: uppercase;
+	color: var(--accent);
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.hype .tagline {
+	margin-top: 12px;
+	font-size: 36px;
+	font-style: italic;
+	color: var(--paper-ink);
+}
+
+.cols {
+	display: flex;
+	gap: 46px;
+	align-items: flex-start;
+	/* Takes the spare height on a card with little text. It has no background, so
+	   air under the tables is invisible, where the same air under the scouting
+	   panel leaves a visible empty box. */
+	flex: 1 1 auto;
+}
+
+.cols > * {
+	flex: 1 1 0;
+	min-width: 0;
+	/* A flex column, so the table inside it can take the height the two-column
+	   block was given. */
+	display: flex;
+	flex-direction: column;
+	align-self: stretch;
+}
+
+/* Spread the rows into the spare height instead of leaving it as a gap above
+   the scouting panel. Only from four rows up: with one or two, the extra lands
+   in a single row and the rule under it ends up nowhere near the text. */
+.metrics table:has(tr:nth-child(4)) {
+	flex: 1 1 auto;
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 33px;
+}
+
+.metrics td {
+	padding: 18px 0;
+	border-bottom: 2px solid var(--rule);
+}
+
+.metrics td.value {
+	text-align: right;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.metrics td .unit {
+	font-size: 23px;
+	font-weight: 500;
+	color: var(--muted);
+	padding-left: 8px;
+}
+
+.comp {
+	padding: 18px 0;
+	border-bottom: 2px solid var(--rule);
+}
+
+.comp .line {
+	display: flex;
+	justify-content: space-between;
+	gap: 16px;
+	font-size: 33px;
+}
+
+.comp .player {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.comp .season {
+	color: var(--muted);
+	font-size: 25px;
+	padding-left: 10px;
+}
+
+.comp .pct {
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: var(--accent);
+	flex: 0 0 auto;
+}
+
+.comp .bar {
+	margin-top: 9px;
+	height: 9px;
+	border-radius: 5px;
+	background: var(--rule);
+	overflow: hidden;
+}
+
+.comp .bar span {
+	display: block;
+	height: 100%;
+	background: var(--accent);
+}
+
+.scouting {
+	/* Only as tall as its text. The slack goes between the panel and the
+	   provenance strip, not inside the panel. */
+	flex: 0 1 auto;
+	background: var(--panel);
+	border-radius: 14px;
+	padding: 28px 32px 32px;
+}
+
+.scouting p {
+	font-size: 35px;
+	line-height: 1.44;
+	/* The blurb is built on numbers. Proportional digits kern the point under
+	   the 7, and 7.1 ft reads as 71 ft from across a room. */
+	font-variant-numeric: tabular-nums;
+	/* No last line of one word. Chromium 117 and later. */
+	text-wrap: pretty;
+}
+
+/* A number and its unit, which render.py wraps together, never split across a
+   line: "follows a 7.1" on one line and "ft swing" on the next. */
+.nb {
+	white-space: nowrap;
+}
+
+.provenance {
+	/* Takes the slack, so the strip always sits on the bottom edge. */
+	margin-top: auto;
+	border-top: 3px solid var(--rule);
+	padding-top: 18px;
+}
+
+.provenance table {
+	font-size: 23px;
+	color: var(--muted);
+}
+
+.provenance th,
+.provenance td {
+	padding: 5px 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	text-align: left;
+}
+
+/* Without these the milliseconds column is bare numbers with no unit. */
+.provenance th {
+	font-size: 19px;
+	font-weight: 600;
+	letter-spacing: 3px;
+	text-transform: uppercase;
+	color: var(--muted);
+	opacity: 0.8;
+	padding-bottom: 9px;
+}
+
+.provenance td.step {
+	font-weight: 700;
+	color: var(--paper-ink);
+	text-transform: uppercase;
+	letter-spacing: 3px;
+}
+
+.provenance th.step,
+.provenance td.step {
+	width: 168px;
+}
+
+.provenance th.model,
+.provenance td.model {
+	width: 40%;
+}
+
+.provenance th.ms,
+.provenance td.ms {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.provenance .made {
+	margin-top: 18px;
+	font-size: 24px;
+	font-weight: 600;
+	letter-spacing: 4px;
+	text-transform: uppercase;
+	color: var(--paper-ink);
+}
