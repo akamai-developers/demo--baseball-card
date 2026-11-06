@@ -25,7 +25,8 @@ __pycache__/
 dist/
 *.egg-info/
 
-# Outputs and weights.
+# Outputs and weights. web/vendor/ is downloaded by make web-vendor.
 out/
+web/vendor/
 hf-cache/
 *.safetensors

@@ -30,7 +30,7 @@ This repo is being built, and this README says what works today.
 | The pipeline, the comps, the photo checks, `cardctl` | built, tested in mock mode |
 | The cutout, art, gpu-stats and vLLM services, with stand-ins for the models | built, tested in mock mode |
 | BiRefNet, FLUX.2 [klein] and Gemma 4 in those services | not built yet |
-| The browser app | not built yet |
+| The browser app, with the camera and the face detector | built, tested in mock mode in Chromium |
 | The deploy to Akamai Cloud | not built yet |
 
 ## models
@@ -58,8 +58,9 @@ make card-mock    # the test photo's card, through the stack, into out/
 
 If your user needs `sudo` for Docker, say so once per command:
 `DOCKER="sudo -E docker" make up-mock`. If port 8443 is taken, set
-`GATEWAY_PORT` in `.env`. The first `make up-mock` builds five images and takes
-a few minutes. After that it takes seconds.
+`GATEWAY_PORT` in `.env`. The first `make up-mock` builds five images and
+downloads the browser's 12 MB face detector, which takes a few minutes. After
+that it takes seconds.
 
 `make card-mock` posts `tests/fixtures/portrait.jpg` and `examples/stats.json`
 to the stack, waits for the card, and prints the ledger:
@@ -87,6 +88,37 @@ stand-in, and each one says so in the model column: `mock/plain-wall-matte` is
 a colour threshold, `mock/procedural-stadium` draws a ballpark with numpy, and
 `mock/wordlist` picks words from lists. The comps are real: the three 2025
 hitters whose Statcast numbers sit nearest yours.
+
+## the app
+
+Open http://localhost:8443 and paste the key. `make up-mock` wrote it into
+`.env`, and this prints it:
+
+```bash
+sed -n 's/^CARD_API_KEY=//p' .env
+```
+
+<img src="docs/app.jpg" width="100%" alt="The app at 1920 x 1080: the test card's front on the left, and beside it the ledger of the six steps with each model, licence, where it ran and milliseconds, over the buttons Flip, Save front, Save back and Make another">
+
+Give it a photo from a file or the camera, a name, the numbers you have and a
+style, then Generate. The front comes in first and the back a moment later,
+beside the ledger of every step. A click turns the card over. Save front and
+Save back write the PNGs at 1500 x 2100. Make another brings the form back as
+you left it. Node shows what each service says about itself and what each GPU
+is doing. How it works is the pipeline in five lines and the model table, all
+read from the api.
+
+The Camera tab draws a guide and takes the photo once your face is centred,
+lit, sharp and still for 1.5 s. The browser only allows a camera on
+`localhost` or HTTPS, so it works on the mock stack and through an SSH tunnel.
+Your face is found in the browser by BlazeFace, which the api image downloads
+from the pins in `web/vendor.lock` and serves from `/vendor/`. Without it the
+camera still works, the guide is off, and the card places you by the top of
+your outline.
+
+The page keeps the key in the tab's `sessionStorage` until you sign out or
+close the tab. It asks nothing of any other site: no CDN, no fonts from
+elsewhere, no analytics.
 
 ## your own card
 
@@ -187,8 +219,9 @@ a GPU.
 
 ## security
 
-One key guards every route but `/livez`. Caddy is the only service with a
-port, and it binds `127.0.0.1`. [docs/SECURITY.md](docs/SECURITY.md) lists
+One key guards every route but `/livez` and the app's own page and files,
+which is where the key is typed. Caddy is the only service with a port, and it
+binds `127.0.0.1`. [docs/SECURITY.md](docs/SECURITY.md) lists
 each claim with a command that checks it.
 
 ## layout
@@ -205,6 +238,8 @@ services/cutout/      the person out of the photo
 services/art/         the stadium behind them
 services/gpu-stats/   nvidia-smi as JSON
 services/llm-mock/    vLLM's routes without vLLM
+web/app/              the browser app: the page, its scripts, its font and logo
+web/vendor.lock       the face detector's files, pinned by sha256
 cli/                  cardctl
 deploy/models.env     the model repos and their pinned commits
 examples/             the test player's numbers, and every route with curl
@@ -216,7 +251,10 @@ tests/                unit, integration, security, and the test photo
 Apache-2.0. See [LICENSE](LICENSE). Two files in the card are not covered by
 it: the font is under the SIL Open Font License, beside it in
 `packages/card/src/card/fonts/`, and the Akamai logo in
-`packages/card/src/card/brand/` is Akamai's trademark. The test photo is CC0,
+`packages/card/src/card/brand/` is Akamai's trademark. The app uses copies of
+the same two files, in `web/app/fonts/` and `web/app/brand/`. The face
+detector, MediaPipe Tasks Vision and its BlazeFace model, is Apache-2.0. It is
+downloaded when the api image is built and is not in this repo. The test photo is CC0,
 and `tests/fixtures/SOURCES.md` says where it came from. The hitters' table in
 `packages/comps/src/comps/data/` is public MLB data from Baseball Savant, used
 only to compare one set of numbers to another. Its first lines say where each

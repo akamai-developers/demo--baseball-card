@@ -24,9 +24,11 @@ def client(clean_settings) -> TestClient:
 
 
 def test_livez_is_the_one_open_route(client: TestClient) -> None:
+    """The one open route. The browser app's page at / and its files are open
+    too, and tests/unit/test_app_routes.py holds them."""
     response = client.get("/livez")
     assert (response.status_code, response.text) == (200, "ok")
-    for path in ("/healthz", "/models", "/nope", "/"):
+    for path in ("/healthz", "/models", "/nope", "/index.html"):
         response = client.get(path)
         assert response.status_code == 401, path
         assert response.headers["WWW-Authenticate"] == "Bearer"

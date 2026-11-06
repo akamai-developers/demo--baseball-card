@@ -2,8 +2,8 @@
 
 CONTRIBUTING.md bans the em-dash and a list of words from the card templates,
 the text model's prompt and fallback, the mock model's word lists, the words
-the api sends back to a person, the README, the docs, the examples and the
-changelog. This reads each of those files whole, comments included, and names
+the api sends back to a person, the browser app, the README, the docs, the
+examples and the changelog. This reads each of those files whole, comments included, and names
 the file, the line and the phrase. Of the example scripts it reads the comments
 only: the rest is code.
 
@@ -29,6 +29,7 @@ TEXT_PY = API_SRC / "text.py"
 MOCK_LLM = REPO_ROOT / "services" / "llm-mock" / "src" / "llm_mock" / "main.py"
 EXAMPLES = REPO_ROOT / "examples"
 EXAMPLE_SCRIPTS = sorted(EXAMPLES.glob("*.py"))
+WEB_APP = REPO_ROOT / "web" / "app"
 
 FILES = [
     *sorted(TEMPLATES.glob("*.html")),
@@ -44,6 +45,11 @@ FILES = [
     API_SRC / "photo.py",
     MOCK_LLM,
     REPO_ROOT / "cli" / "src" / "cardctl" / "main.py",
+    # The page: its words, the sentences it shows, and its comments.
+    WEB_APP / "index.html",
+    WEB_APP / "app.css",
+    *sorted(WEB_APP.glob("*.js")),
+    REPO_ROOT / "web" / "vendor.lock",
     REPO_ROOT / "README.md",
     REPO_ROOT / "CHANGELOG.md",
     REPO_ROOT / "CONTRIBUTING.md",
@@ -98,6 +104,10 @@ def test_no_file_the_rules_name_has_dropped_out() -> None:
         "services/api/src/api/catalog.py",
         "services/api/src/api/routes.py",
         "services/llm-mock/src/llm_mock/main.py",
+        "web/app/index.html",
+        "web/app/app.js",
+        "web/app/results.js",
+        "web/app/how.js",
         "README.md",
         "CHANGELOG.md",
         "CONTRIBUTING.md",

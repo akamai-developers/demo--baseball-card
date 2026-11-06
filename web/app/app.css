@@ -1,0 +1,1684 @@
+/* Baseball Card.
+ *
+ * The Akamai 2025 brand, written out as CSS custom properties. Nothing in this
+ * file fetches anything: the font is served from /app/fonts, the logo from
+ * /app/brand.
+ *
+ * Rules that hold everywhere below:
+ *   - colour comes from a token
+ *   - spacing is a multiple of 4 px, from --ak-space-*, on an 8 px grid
+ *   - radii are 12 px, borders are 1 px of --ak-border
+ *   - numbers use tabular figures, so they never jump as they change
+ */
+
+/* ---------------------------------------------------------------- fonts -- */
+
+@font-face {
+  font-family: "Instrument Sans";
+  src: url("/app/fonts/InstrumentSans.ttf") format("truetype-variations");
+  font-weight: 400 700;
+  font-stretch: 75% 100%;
+  font-display: swap;
+}
+
+/* --------------------------------------------------------------- tokens -- */
+
+:root {
+  /* Brand, raw. Navy, white and blue are the core. Orange is one accent at a
+     time, and green and red only report state. */
+  --ak-navy: #002f6c;
+  --ak-blue: #00a4eb;
+  --ak-orange: #ff8b00;
+  --ak-green: #21c08b;
+  --ak-red: #ff5c5c;
+
+  /* Surfaces. Dark means navy, not black. */
+  --ak-bg: #00142e;
+  --ak-surface: #00214c;
+  --ak-surface-2: #002f6c;
+  --ak-surface-3: #013b85;
+
+  --ak-text: #eaf2fb;
+  --ak-text-muted: #8fa9c7;
+  --ak-border: #0b3b77;
+  --ak-border-strong: #14559f;
+
+  --ak-on-blue: #00203f;
+  --ak-on-orange: #2b1600;
+  --ak-blue-hover: #2cb9f4;
+  --ak-orange-hover: #ffa233;
+
+  --ak-success: var(--ak-green);
+  --ak-warning: var(--ak-orange);
+  --ak-danger: var(--ak-red);
+
+  /* Type */
+  --ak-font-sans: "Instrument Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --ak-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --ak-text-h1: 2rem;
+  --ak-text-h2: 1.375rem;
+  --ak-text-title: 0.9375rem;
+  --ak-text-lead: 1rem;
+  --ak-text-body: 0.875rem;
+  --ak-text-small: 0.8125rem;
+  --ak-text-caption: 0.6875rem;
+
+  --ak-weight-regular: 400;
+  --ak-weight-medium: 500;
+  --ak-weight-semibold: 600;
+  --ak-weight-bold: 700;
+
+  /* Space, on a 4 px base */
+  --ak-space-1: 4px;
+  --ak-space-2: 8px;
+  --ak-space-3: 12px;
+  --ak-space-4: 16px;
+  --ak-space-5: 20px;
+  --ak-space-6: 24px;
+  --ak-space-8: 32px;
+  --ak-space-12: 48px;
+
+  --ak-radius-sm: 6px;
+  --ak-radius-md: 12px;
+  --ak-radius-lg: 20px;
+  --ak-radius-full: 999px;
+
+  --ak-shadow-md: 0 6px 20px rgb(0 8 20 / 45%);
+  --ak-shadow-lg: 0 18px 48px rgb(0 8 20 / 55%);
+
+  /* Motion. One system: every transition in this file and every
+     element.animate() in the app use these, and web/app/motion.js is where
+     JavaScript reads them. Nothing else writes a duration down. */
+  --ak-dur-fast: 150ms; /* hover, focus, colour */
+  --ak-dur-base: 200ms; /* numbers, bars, a view coming on show */
+  --ak-dur-slow: 350ms; /* a card dealing in */
+  --ak-dur-flip: 500ms; /* the card flip */
+  --ak-dur-pulse: 1200ms; /* the running dot's heartbeat. A loop, not a move */
+  --ak-ease-out: cubic-bezier(0.22, 1, 0.36, 1); /* everything that ends on screen */
+  --ak-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* the flip, and the heartbeat */
+
+  --ak-focus: 0 0 0 2px var(--ak-bg), 0 0 0 4px var(--ak-blue);
+
+  color-scheme: dark;
+}
+
+/* The reader asked for less motion, so nothing moves. No transition starts
+   and no animation runs. JavaScript checks the same setting before it
+   animates (motion.js). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-name: none !important;
+    animation-duration: 1ms !important;
+    transition-property: none !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* ----------------------------------------------------------------- base -- */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ak-bg);
+  color: var(--ak-text);
+  font-family: var(--ak-font-sans);
+  font-size: var(--ak-text-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: var(--ak-weight-semibold);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+p {
+  margin: 0;
+}
+
+code {
+  font-family: var(--ak-font-mono);
+  font-size: 0.9em;
+}
+
+a {
+  color: var(--ak-blue);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ak-focus);
+  border-radius: var(--ak-radius-sm);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.logo {
+  display: block;
+  height: 26px;
+  width: auto;
+}
+
+.empty,
+.note {
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-small);
+}
+
+.note {
+  margin-top: var(--ak-space-3);
+}
+
+/* -------------------------------------------------------------- buttons -- */
+
+.btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: var(--ak-radius-md);
+  padding: var(--ak-space-2) var(--ak-space-4);
+  font: inherit;
+  font-weight: var(--ak-weight-semibold);
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--ak-text);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background var(--ak-dur-fast) var(--ak-ease-out),
+    border-color var(--ak-dur-fast) var(--ak-ease-out),
+    transform var(--ak-dur-fast) var(--ak-ease-out);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--ak-blue);
+  border-color: var(--ak-blue);
+  color: var(--ak-on-blue);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--ak-blue-hover);
+  border-color: var(--ak-blue-hover);
+}
+
+.btn-accent {
+  background: var(--ak-orange);
+  border-color: var(--ak-orange);
+  color: var(--ak-on-orange);
+}
+
+.btn-accent:hover:not(:disabled) {
+  background: var(--ak-orange-hover);
+  border-color: var(--ak-orange-hover);
+}
+
+.btn-secondary {
+  background: var(--ak-surface-2);
+  border-color: var(--ak-border-strong);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--ak-surface-3);
+}
+
+.btn-ghost {
+  color: var(--ak-text-muted);
+  border-color: var(--ak-border);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: var(--ak-text);
+  border-color: var(--ak-border-strong);
+}
+
+.btn-sm {
+  padding: var(--ak-space-1) var(--ak-space-3);
+  font-size: var(--ak-text-small);
+  border-radius: var(--ak-radius-sm);
+}
+
+.btn-lg {
+  padding: var(--ak-space-3) var(--ak-space-5);
+  font-size: var(--ak-text-lead);
+  width: 100%;
+}
+
+.btn-xl {
+  padding: var(--ak-space-4) var(--ak-space-8);
+  font-size: 1.0625rem;
+  min-width: 16rem;
+}
+
+/* --------------------------------------------------------------- fields -- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ak-space-1);
+  min-width: 0;
+}
+
+.field-label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ak-space-2);
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-caption);
+  font-weight: var(--ak-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.field-aux,
+.req {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: var(--ak-weight-regular);
+}
+
+.req {
+  color: var(--ak-blue);
+}
+
+input:not([type]),
+input[type="password"],
+input[type="number"],
+select {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  padding: var(--ak-space-2) var(--ak-space-3);
+  background: var(--ak-bg);
+  color: var(--ak-text);
+  border: 1px solid var(--ak-border);
+  border-radius: var(--ak-radius-sm);
+  font: inherit;
+  line-height: 1.4;
+  transition: border-color var(--ak-dur-fast) var(--ak-ease-out);
+}
+
+input:hover,
+select:hover {
+  border-color: var(--ak-border-strong);
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--ak-blue);
+  box-shadow: var(--ak-focus);
+}
+
+input::placeholder {
+  color: var(--ak-text-muted);
+  opacity: 0.6;
+}
+
+select {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ak-text-muted) 50%),
+    linear-gradient(135deg, var(--ak-text-muted) 50%, transparent 50%);
+  background-position:
+    right 14px center,
+    right 9px center;
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  padding-right: var(--ak-space-8);
+}
+
+.msg {
+  margin-top: var(--ak-space-3);
+  padding: var(--ak-space-2) var(--ak-space-3);
+  border-radius: var(--ak-radius-sm);
+  font-size: var(--ak-text-small);
+}
+
+.msg-error {
+  background: rgb(255 92 92 / 12%);
+  border: 1px solid rgb(255 92 92 / 35%);
+  color: var(--ak-danger);
+}
+
+/* -------------------------------------------------------------- sign in -- */
+
+.signin {
+  position: relative;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--ak-space-6);
+  overflow: hidden;
+}
+
+/* The wave, behind the sign-in card and the header and nowhere else. */
+.wave {
+  position: absolute;
+  inset: auto 0 0 0;
+  width: 100%;
+  height: 38%;
+  pointer-events: none;
+}
+
+.wave-a {
+  fill: var(--ak-navy);
+  opacity: 0.55;
+}
+
+.wave-b {
+  fill: var(--ak-blue);
+  opacity: 0.1;
+}
+
+.signin-card {
+  position: relative;
+  width: min(100%, 24rem);
+  padding: var(--ak-space-8);
+  background: var(--ak-surface);
+  border: 1px solid var(--ak-border);
+  border-radius: var(--ak-radius-lg);
+  box-shadow: var(--ak-shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ak-space-4);
+}
+
+.signin-title {
+  font-size: var(--ak-text-h2);
+}
+
+/* One field, so its label is a word at reading size. */
+.signin-card .field-label {
+  color: var(--ak-text);
+  font-size: var(--ak-text-title);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.signin-card input {
+  padding: var(--ak-space-3);
+  font-size: var(--ak-text-lead);
+}
+
+.signin-card .msg {
+  margin-top: 0;
+}
+
+.signin-help {
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-small);
+}
+
+/* --------------------------------------------------------------- header -- */
+
+.app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The logo on the left, the views in the middle, the node's pill and Sign
+   out on the right. The two sides split what is left, so the views sit in
+   the middle whatever the sides hold. */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
+  gap: var(--ak-space-4);
+  padding: 0 var(--ak-space-6);
+  background: var(--ak-navy);
+  border-bottom: 1px solid var(--ak-border);
+}
+
+.header-left,
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--ak-space-3);
+  min-width: 0;
+  padding: var(--ak-space-3) 0;
+}
+
+.header-right {
+  justify-content: flex-end;
+}
+
+.header-div {
+  width: 1px;
+  height: 20px;
+  background: var(--ak-border-strong);
+}
+
+.header-title {
+  font-size: 1.0625rem;
+  font-weight: var(--ak-weight-semibold);
+  white-space: nowrap;
+}
+
+.nav {
+  display: flex;
+  align-items: stretch;
+  gap: var(--ak-space-1);
+}
+
+.nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--ak-space-3);
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-title);
+  font-weight: var(--ak-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--ak-dur-fast) var(--ak-ease-out);
+}
+
+.nav-link:hover,
+.nav-link[aria-current="page"] {
+  color: var(--ak-text);
+}
+
+/* The view on show has a blue line along the header's foot. */
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: var(--ak-space-3);
+  right: var(--ak-space-3);
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--ak-blue);
+  transform: scaleX(0);
+  transition: transform var(--ak-dur-base) var(--ak-ease-out);
+}
+
+.nav-link[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+.nav-link:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--ak-blue);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ak-space-2);
+  padding: var(--ak-space-1) var(--ak-space-3);
+  border: 1px solid var(--ak-border-strong);
+  border-radius: var(--ak-radius-full);
+  font-size: var(--ak-text-small);
+  color: var(--ak-text-muted);
+  white-space: nowrap;
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ak-radius-full);
+  background: var(--ak-text-muted);
+  flex: none;
+}
+
+.dot-ok {
+  background: var(--ak-success);
+}
+
+.dot-warn {
+  background: var(--ak-warning);
+}
+
+.dot-bad {
+  background: var(--ak-danger);
+}
+
+.dot-run {
+  background: var(--ak-orange);
+  animation: pulse var(--ak-dur-pulse) var(--ak-ease-in-out) infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* The node stopped answering. The only error the page raises on its own. */
+.banner {
+  padding: var(--ak-space-3) var(--ak-space-6);
+  background: var(--ak-surface);
+  border-bottom: 1px solid var(--ak-border);
+  border-left: 3px solid var(--ak-orange);
+  color: var(--ak-warning);
+  font-size: var(--ak-text-small);
+}
+
+/* ---------------------------------------------------------------- views -- */
+
+.view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ak-space-4);
+  width: 100%;
+  max-width: 120rem;
+  margin-inline: auto;
+  padding: var(--ak-space-6);
+}
+
+/* The node and How it works read as pages, at a width a table can be read at. */
+.view-page {
+  max-width: 84rem;
+}
+
+.page-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ak-space-2);
+  margin-bottom: var(--ak-space-2);
+}
+
+.page-title {
+  font-size: var(--ak-text-h1);
+}
+
+.page-lead {
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-lead);
+  max-width: 48rem;
+}
+
+.panel {
+  background: var(--ak-surface);
+  border: 1px solid var(--ak-border);
+  border-radius: var(--ak-radius-md);
+  padding: var(--ak-space-5);
+  min-width: 0;
+}
+
+.panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ak-space-2) var(--ak-space-3);
+  margin-bottom: var(--ak-space-4);
+}
+
+.panel-head h2,
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: var(--ak-space-2);
+  font-size: var(--ak-text-h2);
+}
+
+.panel-title {
+  margin-bottom: var(--ak-space-4);
+}
+
+.step-no {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--ak-radius-full);
+  background: var(--ak-blue);
+  color: var(--ak-on-blue);
+  font-size: var(--ak-text-caption);
+  font-weight: var(--ak-weight-bold);
+}
+
+.panel-sub {
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-small);
+}
+
+.panel-action {
+  margin-left: auto;
+}
+
+/* ----------------------------------------------------------------- form -- */
+
+/* Photo and player side by side from a laptop up, style and Generate under
+   them. At 1920 x 1080 the whole form is on the screen at once. */
+.make {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ak-space-4);
+  align-items: start;
+}
+
+@media (min-width: 1101px) {
+  .make {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .panel-style,
+  .generate {
+    grid-column: 1 / -1;
+  }
+}
+
+.tabs {
+  display: flex;
+  gap: var(--ak-space-1);
+  padding: var(--ak-space-1);
+  margin-left: auto;
+  background: var(--ak-bg);
+  border: 1px solid var(--ak-border);
+  border-radius: var(--ak-radius-sm);
+}
+
+.tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ak-text-muted);
+  font: inherit;
+  font-size: var(--ak-text-small);
+  font-weight: var(--ak-weight-semibold);
+  padding: var(--ak-space-1) var(--ak-space-4);
+  border-radius: var(--ak-radius-sm);
+  cursor: pointer;
+  transition: background var(--ak-dur-fast) var(--ak-ease-out);
+}
+
+.tab.is-on {
+  background: var(--ak-surface-2);
+  color: var(--ak-text);
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--ak-space-2);
+  padding: var(--ak-space-8) var(--ak-space-4);
+  border: 1px dashed var(--ak-border-strong);
+  border-radius: var(--ak-radius-md);
+  background: var(--ak-bg);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color var(--ak-dur-fast) var(--ak-ease-out),
+    background var(--ak-dur-fast) var(--ak-ease-out);
+}
+
+.dropzone:hover,
+.dropzone.is-over {
+  border-color: var(--ak-blue);
+  background: rgb(0 164 235 / 8%);
+}
+
+.dz-icon {
+  width: 28px;
+  height: 28px;
+  stroke: var(--ak-blue);
+  stroke-width: 1.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dz-lead {
+  font-weight: var(--ak-weight-semibold);
+}
+
+.dz-sub {
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-small);
+  max-width: 28rem;
+}
+
+.thumb-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ak-space-4);
+  padding: var(--ak-space-3);
+  border: 1px solid var(--ak-border);
+  border-radius: var(--ak-radius-md);
+  background: var(--ak-bg);
+}
+
+.thumb {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: var(--ak-radius-sm);
+  border: 1px solid var(--ak-border);
+  flex: none;
+}
+
+.thumb-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ak-space-1);
+  min-width: 0;
+}
+
+.thumb-name {
+  font-weight: var(--ak-weight-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.thumb-size {
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-small);
+}
+
+.thumb-note {
+  color: var(--ak-warning);
+  font-size: var(--ak-text-small);
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ak-space-3);
+  padding: var(--ak-space-6);
+  border: 1px dashed var(--ak-border);
+  border-radius: var(--ak-radius-md);
+}
+
+.placeholder-lead {
+  font-weight: var(--ak-weight-semibold);
+}
+
+.placeholder-sub {
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-small);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ak-space-4);
+}
+
+.grid-front {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+/* The bio and the numbers, each a <details>, closed until asked for. */
+.more {
+  margin-top: var(--ak-space-4);
+  border: 1px solid var(--ak-border);
+  border-radius: var(--ak-radius-sm);
+  background: var(--ak-bg);
+}
+
+.more-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ak-space-3);
+  padding: var(--ak-space-3) var(--ak-space-4);
+  font-weight: var(--ak-weight-semibold);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+.more-head::-webkit-details-marker {
+  display: none;
+}
+
+/* A chevron, right when closed and down when open. */
+.more-head::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-right: var(--ak-space-1);
+  border-right: 1.5px solid var(--ak-text-muted);
+  border-bottom: 1.5px solid var(--ak-text-muted);
+  transform: rotate(-45deg);
+  transition: transform var(--ak-dur-base) var(--ak-ease-out);
+}
+
+.more[open] > .more-head::before {
+  transform: rotate(45deg);
+}
+
+.more-note {
+  margin-left: auto;
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-small);
+  font-weight: var(--ak-weight-regular);
+}
+
+.more-body {
+  padding: var(--ak-space-2) var(--ak-space-4) var(--ak-space-4);
+}
+
+.more-lead {
+  margin-bottom: var(--ak-space-3);
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-small);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--ak-space-2);
+}
+
+.metric {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--ak-space-1) var(--ak-space-3);
+  padding: var(--ak-space-2) var(--ak-space-3);
+  border: 1px solid var(--ak-border);
+  border-radius: var(--ak-radius-sm);
+  background: var(--ak-surface);
+}
+
+.metric.is-off {
+  opacity: 0.55;
+}
+
+.metric-top {
+  display: flex;
+  align-items: baseline;
+  gap: var(--ak-space-2);
+  min-width: 0;
+}
+
+.metric-name {
+  font-size: var(--ak-text-small);
+  font-weight: var(--ak-weight-semibold);
+  white-space: nowrap;
+}
+
+.metric-unit {
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-caption);
+  white-space: nowrap;
+}
+
+.metric-value {
+  min-width: 3.5rem;
+  text-align: right;
+  font-weight: var(--ak-weight-semibold);
+  color: var(--ak-blue);
+}
+
+.tick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ak-space-1);
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tick input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--ak-blue);
+}
+
+input[type="range"] {
+  appearance: none;
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--ak-radius-full);
+  background: var(--ak-surface-3);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border-radius: var(--ak-radius-full);
+  background: var(--ak-blue);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: var(--ak-radius-full);
+  background: var(--ak-surface-3);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: var(--ak-radius-full);
+  background: var(--ak-blue);
+}
+
+input[type="range"]:disabled {
+  cursor: not-allowed;
+}
+
+/* Two styles, side by side: a small front of the test card, its name, and
+   what it looks like. */
+.styles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 30rem));
+  gap: var(--ak-space-4);
+}
+
+.style {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--ak-space-4);
+  padding: var(--ak-space-3);
+  border: 1px solid var(--ak-border);
+  border-radius: var(--ak-radius-md);
+  background: var(--ak-bg);
+  cursor: pointer;
+  transition: border-color var(--ak-dur-fast) var(--ak-ease-out);
+}
+
+.style:hover {
+  border-color: var(--ak-border-strong);
+}
+
+.style:has(input:checked) {
+  border-color: var(--ak-blue);
+  box-shadow: inset 0 0 0 1px var(--ak-blue);
+}
+
+.style:has(input:focus-visible) {
+  box-shadow: var(--ak-focus);
+}
+
+.style input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.style img {
+  width: 96px;
+  height: 134px;
+  border-radius: var(--ak-radius-sm);
+  flex: none;
+  box-shadow: var(--ak-shadow-md);
+}
+
+.style-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ak-space-1);
+}
+
+.style-name {
+  font-size: var(--ak-text-title);
+  font-weight: var(--ak-weight-semibold);
+}
+
+.style-look {
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-small);
+}
+
+.generate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ak-space-2) var(--ak-space-5);
+}
+
+.generate-note {
+  color: var(--ak-text-muted);
+}
+
+.generate-note.is-error {
+  color: var(--ak-danger);
+}
+
+/* --------------------------------------------------------------- camera -- */
+
+/* The stage takes its shape from the stream, set by camera.js, so the guide's
+   viewBox is the video's own pixels. The video is mirrored, the SVG is not:
+   the boxes drawn on it are already mirrored by framing.mirrorBox(). */
+.cam {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ak-space-3);
+}
+
+.cam-stage {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  max-height: 60dvh;
+  margin-inline: auto;
+  overflow: hidden;
+  background: var(--ak-bg);
+  border: 1px solid var(--ak-border);
+  border-radius: var(--ak-radius-md);
+}
+
+/* The ring's colour as a 6 px frame inside the whole preview, so a person a
+   step back sees it go green, not only a line round a head. */
+.cam-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 6px var(--cam-frame, transparent);
+  pointer-events: none;
+  transition: box-shadow var(--ak-dur-base) var(--ak-ease-out);
+}
+
+.cam-stage[data-level="red"] {
+  --cam-frame: var(--ak-danger);
+}
+
+.cam-stage[data-level="amber"] {
+  --cam-frame: var(--ak-orange);
+}
+
+.cam-stage[data-level="green"] {
+  --cam-frame: var(--ak-green);
+}
+
+#cam-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.cam-guide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.cam-ring {
+  fill: none;
+  stroke: var(--ak-border-strong);
+  transition: stroke var(--ak-dur-base) var(--ak-ease-out);
+}
+
+.cam-ring[data-level="red"] {
+  stroke: var(--ak-danger);
+}
+
+.cam-ring[data-level="amber"] {
+  stroke: var(--ak-orange);
+}
+
+.cam-ring[data-level="green"] {
+  stroke: var(--ak-green);
+}
+
+.cam-body {
+  fill: none;
+  stroke: var(--ak-text-muted);
+  stroke-linecap: round;
+  stroke-dasharray: 7 11;
+  opacity: 0.4;
+}
+
+/* The hidden attribute is not reliable inside SVG, and this one is toggled
+   every frame. */
+.cam-face[hidden] {
+  display: none;
+}
+
+.cam-face {
+  fill: none;
+  stroke: var(--ak-blue);
+  stroke-width: 2;
+  opacity: 0.5;
+}
+
+.cam-count {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: end;
+  justify-items: center;
+  padding-bottom: 10%;
+  font-size: clamp(3.5rem, 12vw, 7rem);
+  font-weight: var(--ak-weight-bold);
+  text-shadow: 0 2px 24px rgb(0 8 20 / 80%);
+}
+
+.cam-hint {
+  position: absolute;
+  left: 50%;
+  bottom: var(--ak-space-3);
+  transform: translateX(-50%);
+  max-width: 90%;
+  padding: var(--ak-space-1) var(--ak-space-4);
+  border-radius: var(--ak-radius-full);
+  background: rgb(0 20 46 / 82%);
+  border: 1px solid var(--ak-border);
+  font-size: var(--ak-text-small);
+  font-weight: var(--ak-weight-semibold);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cam-hint[data-level="red"] {
+  border-color: var(--ak-danger);
+}
+
+.cam-hint[data-level="amber"] {
+  border-color: var(--ak-orange);
+}
+
+.cam-hint[data-level="green"] {
+  border-color: var(--ak-green);
+  color: var(--ak-green);
+}
+
+.cam-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--ak-space-4);
+  flex-wrap: wrap;
+}
+
+.cam-device {
+  max-width: 16rem;
+  margin-left: auto;
+}
+
+.cam-note {
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-caption);
+}
+
+/* --------------------------------------------------------------- result -- */
+
+/* The card on the left, as tall as the screen allows, and its ledger beside
+   it. On a phone the ledger goes under the card. */
+.result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ak-space-6);
+  align-items: start;
+}
+
+.result-card {
+  position: relative;
+  width: min(100%, calc((100dvh - 9rem) * 1500 / 2100));
+  aspect-ratio: 1500 / 2100;
+  margin-inline: auto;
+}
+
+@media (min-width: 1101px) {
+  .result {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .result-card {
+    width: min(42vw, calc((100dvh - 9rem) * 1500 / 2100));
+  }
+}
+
+/* Until the front is drawn: a frame the card's shape, dashed. */
+.card-wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--ak-space-6);
+  border: 1px dashed var(--ak-border-strong);
+  border-radius: var(--ak-radius-md);
+  background: var(--ak-surface);
+  color: var(--ak-text-muted);
+  text-align: center;
+}
+
+.card-wait.is-failed {
+  border-color: rgb(255 92 92 / 45%);
+  color: var(--ak-danger);
+}
+
+/* The card. A button: a tap, Space or Enter turns it over. */
+.card-flip {
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ak-radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  perspective: 2400px;
+}
+
+.card-inner {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform var(--ak-dur-flip) var(--ak-ease-in-out);
+}
+
+.card-flip.is-turned .card-inner {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  backface-visibility: hidden;
+  border-radius: var(--ak-radius-md);
+  overflow: hidden;
+  background: var(--ak-surface-2);
+  box-shadow: var(--ak-shadow-lg);
+}
+
+.card-face img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+
+.card-pending {
+  color: var(--ak-text-muted);
+}
+
+.result-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ak-space-4);
+  min-width: 0;
+  max-width: 64rem;
+}
+
+.result-title {
+  font-size: var(--ak-text-h1);
+}
+
+.result-status {
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-lead);
+}
+
+.warnings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ak-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.warning {
+  padding: var(--ak-space-1) var(--ak-space-3);
+  border: 1px solid rgb(255 139 0 / 45%);
+  border-radius: var(--ak-radius-full);
+  color: var(--ak-warning);
+  font-size: var(--ak-text-small);
+}
+
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ak-space-3);
+}
+
+.result .msg {
+  margin: 0;
+}
+
+/* --------------------------------------------------------------- tables -- */
+
+/* A table that is wider than a phone scrolls sideways inside its panel. */
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ak-text-small);
+}
+
+.table th {
+  padding: var(--ak-space-2) var(--ak-space-3);
+  border-bottom: 1px solid var(--ak-border-strong);
+  color: var(--ak-text-muted);
+  font-size: var(--ak-text-caption);
+  font-weight: var(--ak-weight-semibold);
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: var(--ak-space-2) var(--ak-space-3);
+  border-bottom: 1px solid var(--ak-border);
+  vertical-align: top;
+}
+
+.table td:first-child {
+  white-space: nowrap;
+}
+
+.table td:first-child .dot,
+.mt-where .dot {
+  margin-right: var(--ak-space-2);
+  vertical-align: 1px;
+}
+
+/* The ledger: a step that has not run yet is dim, the time is on the right. */
+.ledger tr[data-status="queued"] td {
+  color: var(--ak-text-muted);
+}
+
+.ledger tr[data-status="failed"] .lg-model {
+  color: var(--ak-danger);
+}
+
+.ledger th:last-child,
+.lg-ms {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.lg-where,
+.sv-where {
+  white-space: nowrap;
+}
+
+.lg-model {
+  overflow-wrap: anywhere;
+}
+
+/* ----------------------------------------------------------------- node -- */
+
+.gpus {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr));
+  gap: var(--ak-space-4);
+}
+
+.gpu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ak-space-2);
+  padding: var(--ak-space-4);
+  border: 1px solid var(--ak-border);
+  border-radius: var(--ak-radius-md);
+  background: var(--ak-bg);
+}
+
+.gpu-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ak-space-3);
+  font-weight: var(--ak-weight-semibold);
+}
+
+.gpu-line {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) 7.5rem;
+  align-items: center;
+  gap: var(--ak-space-3);
+  font-size: var(--ak-text-small);
+}
+
+.gpu-label {
+  color: var(--ak-text-muted);
+}
+
+.gpu-value {
+  text-align: right;
+}
+
+.bar {
+  height: 8px;
+  border-radius: var(--ak-radius-full);
+  background: var(--ak-surface-3);
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ak-blue);
+  transition: width var(--ak-dur-base) var(--ak-ease-out);
+}
+
+.node-last-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ak-space-3);
+  margin-bottom: var(--ak-space-3);
+  font-weight: var(--ak-weight-semibold);
+}
+
+/* ------------------------------------------------------------------ how -- */
+
+.how-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ak-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  max-width: 64rem;
+}
+
+.how-steps li {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: var(--ak-space-3);
+  font-size: var(--ak-text-lead);
+  counter-increment: step;
+}
+
+.how-steps li::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--ak-radius-full);
+  background: var(--ak-surface-2);
+  border: 1px solid var(--ak-border-strong);
+  font-size: var(--ak-text-small);
+  font-weight: var(--ak-weight-bold);
+}
+
+/* The name over the repo. A cell stays a table cell: its two lines are blocks. */
+.mt-name {
+  display: block;
+  font-weight: var(--ak-weight-semibold);
+}
+
+.mt-repo {
+  display: block;
+  font-family: var(--ak-font-mono);
+  font-size: var(--ak-text-caption);
+}
+
+.mt-pin {
+  font-family: var(--ak-font-mono);
+}
+
+.mt-where {
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ narrower -- */
+
+/* A tablet held upright and a phone: the header wraps the views onto a row of
+   their own, and the form is one column. */
+@media (max-width: 860px) {
+  .header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 0 var(--ak-space-4);
+    gap: 0 var(--ak-space-3);
+  }
+
+  .nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: space-between;
+    border-top: 1px solid var(--ak-border);
+    padding-block: var(--ak-space-1);
+  }
+
+  .nav-link {
+    padding-block: var(--ak-space-2);
+  }
+
+  .view {
+    padding: var(--ak-space-4);
+  }
+}
+
+@media (max-width: 560px) {
+  .header-div,
+  .header-title {
+    display: none;
+  }
+
+  .grid-front {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid-front > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .panel {
+    padding: var(--ak-space-4);
+  }
+
+  .btn-xl {
+    width: 100%;
+  }
+
+  .styles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gpu-line {
+    grid-template-columns: 4rem minmax(0, 1fr) 7rem;
+  }
+
+  /* A table row stacks: its name and its last number on the first line, the
+     rest under them. A phone then shows every column without a sideways
+     scroll, at the cost of the table's column headers. */
+  .table thead {
+    display: none;
+  }
+
+  .table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--ak-space-1) var(--ak-space-3);
+    padding: var(--ak-space-2) 0;
+    border-bottom: 1px solid var(--ak-border);
+  }
+
+  .table td {
+    padding: 0;
+    border: 0;
+    order: 2;
+    color: var(--ak-text-muted);
+  }
+
+  .table td:first-child {
+    order: 0;
+    flex: 1 0 calc(100% - 6.5rem);
+    color: var(--ak-text);
+    font-weight: var(--ak-weight-semibold);
+  }
+
+  .table td:last-child {
+    order: 1;
+    flex: 0 0 5.5rem;
+    color: var(--ak-text);
+    text-align: right;
+  }
+}

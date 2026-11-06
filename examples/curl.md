@@ -24,6 +24,16 @@ curl -s -w '\n' $G/livez
 ok
 ```
 
+The browser app is open too, because the key is typed into it: the page at
+`/`, its files under `/app/`, and the face detector under `/vendor/`. A file
+it does not have is a 404:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' $G/                  # 200
+curl -s -o /dev/null -w '%{http_code}\n' $G/app/app.js        # 200
+curl -s -o /dev/null -w '%{http_code}\n' $G/app/no-such-file  # 404
+```
+
 Every other route answers 401 without the key, a path that does not exist
 included:
 

@@ -33,7 +33,7 @@ STATS ?= examples/stats.json
 STYLE ?=
 OUT ?= out
 
-.PHONY: help env up-mock down logs ps card-mock card card-fixture test lint
+.PHONY: help env up-mock down logs ps card-mock card card-fixture web-vendor test lint
 
 # ---- On a laptop ----------------------------------------------------------
 # The mock stack: every service in Docker with stub models, behind Caddy on
@@ -105,7 +105,13 @@ card-fixture: ## Render the test photo's card into out/. No stack, no models. ST
 	uv run python -m card.render --fixture $(if $(STYLE),--style $(STYLE),)
 
 # ---- Development ----------------------------------------------------------
-# For changing this repo: the tests and the lint.
+# For changing this repo: the face detector's files, the tests and the lint.
+
+# The page's face detector is not ours. web/vendor.lock pins each file by
+# sha256, and this puts them in web/vendor/ for an api run from the checkout.
+# The api image downloads its own copy when it is built.
+web-vendor: ## Download the face detector into web/vendor/, checked by sha256
+	uv run python web/vendor.py
 
 test: ## Run the tests. The integration tests skip until make up-mock
 	uv run playwright install chromium

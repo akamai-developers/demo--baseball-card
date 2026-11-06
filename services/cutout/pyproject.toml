@@ -1,6 +1,6 @@
 [project]
 name = "card-cutout"
-version = "0.3.0"
+version = "0.4.0"
 description = "Cuts the person out of the photo. BiRefNet in real mode, a matte in mock mode."
 requires-python = ">=3.12"
 dependencies = [

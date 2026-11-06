@@ -2,9 +2,9 @@
 
 Every route on every service: no header is 401, a wrong key is 401, the right
 key is the route's own answer, 200, 202 for a new card and 204 for a delete.
-The one exception is /livez. A path the stack does not serve fails closed: 401
-without the key, so a stranger learns nothing about the route list, and 404
-with it.
+The exceptions are /livez and the page: `/`, `/app/*` and `/vendor/*`. A path
+the stack does not serve fails closed: 401 without the key, so a stranger
+learns nothing about the route list, and 404 with it.
 
 This runs against the stack the way the internet would reach it, so it covers
 Caddy's routing as well as each service's own check.
@@ -127,6 +127,27 @@ def test_livez_is_open(gateway: str) -> None:
     assert (response.status_code, response.text.strip()) == (200, "ok")
 
 
+# The page and its files, the other open paths. The key is typed into the page,
+# so the page cannot need it.
+PAGE = [
+    "/",
+    "/app/app.js",
+    "/app/app.css",
+    "/app/brand/akamai-logo-white.svg",
+    "/vendor/tasks-vision/vision_bundle.mjs",
+]
+
+
+@pytest.mark.parametrize("path", PAGE)
+def test_the_page_and_its_files_are_open(gateway: str, path: str) -> None:
+    assert httpx.get(f"{gateway}{path}", timeout=10).status_code == 200, path
+
+
+def test_a_file_the_page_does_not_have_is_a_404_not_a_401(gateway: str) -> None:
+    for path in ("/app/nope.js", "/vendor/nope.wasm"):
+        assert httpx.get(f"{gateway}{path}", timeout=10).status_code == 404, path
+
+
 @pytest.mark.parametrize("route", ROUTES, ids=IDS)
 def test_no_header_is_401(gateway: str, card: str, portrait, route) -> None:
     method, path, body, files = request_for(route, card, card, portrait)
@@ -162,7 +183,16 @@ def test_a_path_the_stack_does_not_serve_fails_closed(
     assert call(gateway, "GET", path, live_key).status_code == 404, path
 
 
-@pytest.mark.parametrize("path", ["/livez/../healthz", "/v1/../healthz", "/v1/../../models"])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/livez/../healthz",
+        "/v1/../healthz",
+        "/v1/../../models",
+        "/app/../healthz",
+        "/vendor/../models",
+    ],
+)
 def test_a_dotted_path_does_not_get_past_the_key(gateway: str, path: str) -> None:
     response = httpx.get(f"{gateway}{path}", timeout=10)
     assert response.status_code in (401, 404), f"{path} answered {response.status_code}"

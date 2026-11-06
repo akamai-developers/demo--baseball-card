@@ -1,0 +1,21 @@
+# The face detector's files, which this repo did not write, pinned by sha256.
+#
+# `make web-vendor` downloads them into web/vendor/, which is gitignored. The
+# api image runs the same script at build time, so the node serves them from
+# its own disk and the page never asks a CDN for anything.
+#
+# Both are Apache-2.0:
+#   MediaPipe Tasks Vision 1.0.1   github.com/google-ai-edge/mediapipe
+#   BlazeFace short range          the face detector model, float16, 225 KB
+#
+# The wasm build is the SIMD one. Every browser shipped since 2021 has
+# WebAssembly SIMD. A browser without it fails to load the detector, and
+# web/app/detector.js turns the framing guide off and lets the camera and the
+# upload keep working.
+#
+# Format: <path under web/vendor>  sha256:<hex digest>  <url>
+
+tasks-vision/vision_bundle.mjs  sha256:d885630c297c0b20b1fe86096cb06291c4c8080876f27852e724f24ac603713f  https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/vision_bundle.mjs
+tasks-vision/wasm/vision_wasm_internal.js  sha256:e170ee67dd4e16c1a6fcd8840a206687e5a59b22c20e4a902bc445b095454d73  https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm/vision_wasm_internal.js
+tasks-vision/wasm/vision_wasm_internal.wasm  sha256:8da277a733926eacd0474b8704b36742d6ec3231c57a860c5b889dff8f1df886  https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/wasm/vision_wasm_internal.wasm
+models/blaze_face_short_range.tflite  sha256:b4578f35940bf5a1a655214a1cce5cab13eba73c1297cd78e1a04c2380b0152f  https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite

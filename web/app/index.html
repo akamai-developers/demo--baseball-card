@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Baseball Card | Akamai Cloud</title>
+    <link rel="icon" href="/app/brand/akamai-logo-white.svg" />
+    <link rel="stylesheet" href="/app/app.css" />
+  </head>
+
+  <body>
+    <!-- Sign in. One field. GET /healthz with the typed key decides. -->
+    <div class="signin" id="signin" hidden>
+      <svg class="wave" viewBox="0 0 1440 520" preserveAspectRatio="none" aria-hidden="true">
+        <path class="wave-a" d="M0 300 C 240 200 480 400 720 300 S 1200 200 1440 300 V520 H0 Z" />
+        <path class="wave-b" d="M0 360 C 300 260 540 460 780 360 S 1220 280 1440 370 V520 H0 Z" />
+      </svg>
+      <form class="signin-card" id="signin-form" autocomplete="off" aria-labelledby="signin-title">
+        <img class="logo" src="/app/brand/akamai-logo-white.svg" alt="Akamai" />
+        <h1 class="signin-title" id="signin-title">Baseball Card</h1>
+        <label class="field">
+          <span class="field-label">API key</span>
+          <input id="key-input" type="password" name="api-key" autocomplete="off" spellcheck="false" required />
+        </label>
+        <p class="msg msg-error" id="signin-error" role="alert" hidden></p>
+        <button class="btn btn-primary btn-lg" type="submit" id="signin-btn">Sign in</button>
+        <p class="signin-help">The key is <code>CARD_API_KEY</code> in your <code>.env</code>. This tab keeps it until you sign out or close it.</p>
+      </form>
+    </div>
+
+    <!-- The app. Everything below is hidden until a key is taken. -->
+    <div class="app" id="app" hidden>
+      <header class="header">
+        <div class="header-left">
+          <img class="logo" src="/app/brand/akamai-logo-white.svg" alt="Akamai" />
+          <span class="header-div" aria-hidden="true"></span>
+          <span class="header-title">Baseball Card</span>
+        </div>
+        <nav class="nav" id="nav" aria-label="Views">
+          <a class="nav-link" href="#make" data-view="make">Make a card</a>
+          <a class="nav-link" href="#node" data-view="node">Node</a>
+          <a class="nav-link" href="#how" data-view="how">How it works</a>
+        </nav>
+        <div class="header-right">
+          <span class="pill" title="Model services loaded on the node, from /healthz">
+            <span class="dot dot-idle" id="node-dot"></span>
+            <span id="node-pill-text">checking</span>
+          </span>
+          <button class="btn btn-ghost btn-sm" id="signout-btn" type="button">Sign out</button>
+        </div>
+      </header>
+
+      <!-- Shown only when /healthz has missed twice running. -->
+      <p class="banner" id="banner" role="status" hidden>
+        The node stopped answering. This page asks again every 5 s. Check that the stack is up, or that
+        make tunnel is still running.
+      </p>
+
+      <!-- Make a card: the form, then the card in its place. -->
+      <main class="view" id="view-make" data-view="make" aria-labelledby="make-title">
+        <h1 class="sr-only" id="make-title" tabindex="-1">Make a card</h1>
+
+        <!-- novalidate: the api checks every field and says what is wrong in a
+             sentence, which the note under Generate shows. -->
+        <form class="make" id="make-form" autocomplete="off" novalidate>
+          <article class="panel" id="panel-photo">
+            <header class="panel-head">
+              <h2><span class="step-no">1</span> Photo</h2>
+              <div class="tabs" id="photo-tabs" role="tablist" aria-label="Photo source">
+                <button class="tab is-on" role="tab" type="button" data-tab="upload" id="tab-btn-upload"
+                        aria-selected="true" aria-controls="tab-upload">Upload</button>
+                <button class="tab" role="tab" type="button" data-tab="camera" id="tab-btn-camera"
+                        aria-selected="false" aria-controls="tab-camera" tabindex="-1">Camera</button>
+              </div>
+            </header>
+
+            <div id="photo-pick">
+              <div class="tabpanel" id="tab-upload" role="tabpanel" aria-labelledby="tab-btn-upload">
+                <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Choose a photo, or drop one here">
+                  <svg class="dz-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 16V4m0 0L8 8m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+                  </svg>
+                  <p class="dz-lead">Drop a photo, or choose one</p>
+                  <p class="dz-sub">JPEG, PNG or WebP, waist up. This browser scales it to 2048 px before it is sent.</p>
+                  <input id="file-input" type="file" accept="image/jpeg,image/png,image/webp" hidden />
+                </div>
+              </div>
+
+              <!-- The preview is mirrored, the saved photo is not. The guide is
+                   drawn in mirrored coordinates so it lines up with what you see. -->
+              <div class="tabpanel" id="tab-camera" role="tabpanel" aria-labelledby="tab-btn-camera" hidden>
+                <div class="cam" id="cam" hidden>
+                  <div class="cam-stage" id="cam-stage" data-level="idle">
+                    <video id="cam-video" playsinline muted autoplay></video>
+                    <svg class="cam-guide" id="cam-guide" viewBox="0 0 640 480" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+                      <path class="cam-body" id="cam-body" d="" />
+                      <ellipse class="cam-ring" id="cam-ring" data-level="idle" cx="320" cy="150" rx="70" ry="90" />
+                      <rect class="cam-face" id="cam-face" x="0" y="0" width="0" height="0" hidden />
+                    </svg>
+                    <p class="cam-count num" id="cam-count" aria-hidden="true" hidden>3</p>
+                    <p class="cam-hint" id="cam-hint" role="status" data-level="">starting the camera</p>
+                  </div>
+                  <div class="cam-controls">
+                    <button class="btn btn-accent" id="cam-shutter" type="button">Take the photo</button>
+                    <select class="cam-device" id="cam-device" aria-label="Camera" hidden></select>
+                  </div>
+                  <p class="cam-note" id="cam-note"></p>
+                </div>
+                <div class="placeholder" id="cam-blocked" hidden>
+                  <p class="placeholder-lead" id="cam-blocked-lead"></p>
+                  <p class="placeholder-sub" id="cam-blocked-sub"></p>
+                  <button class="btn btn-secondary btn-sm" type="button" id="cam-use-upload">Use Upload</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="thumb-row" id="thumb-row" hidden>
+              <img class="thumb" id="thumb" alt="The photo you chose" />
+              <div class="thumb-meta">
+                <p class="thumb-name" id="thumb-name"></p>
+                <p class="thumb-size num" id="thumb-size"></p>
+                <p class="thumb-note" id="thumb-note" hidden></p>
+                <button class="btn btn-secondary btn-sm" id="retake-btn" type="button">Choose another</button>
+              </div>
+            </div>
+            <p class="msg msg-error" id="photo-error" role="alert" hidden></p>
+          </article>
+
+          <article class="panel" id="panel-player">
+            <header class="panel-head">
+              <h2><span class="step-no">2</span> Player</h2>
+              <button class="btn btn-ghost btn-sm panel-action" id="sample-btn" type="button">Sample player</button>
+            </header>
+            <div class="grid grid-front">
+              <label class="field">
+                <span class="field-label">Name <span class="req">required</span></span>
+                <input id="f-name" maxlength="60" placeholder="Sam Rivera" aria-required="true" />
+              </label>
+              <label class="field">
+                <span class="field-label">Number</span>
+                <input id="f-number" class="num" type="number" min="0" max="99" placeholder="23" />
+              </label>
+              <label class="field">
+                <span class="field-label">Position</span>
+                <select id="f-position"><option value="">none</option></select>
+              </label>
+            </div>
+
+            <!-- The bio and the numbers are optional, each closed until asked for. -->
+            <details class="more">
+              <summary class="more-head"><span>Bio</span><span class="more-note">on the back and in the report</span></summary>
+              <div class="more-body grid">
+                <label class="field">
+                  <span class="field-label">Bats</span>
+                  <select id="f-bats"><option value="">none</option><option value="R">Right</option><option value="L">Left</option><option value="S">Switch</option></select>
+                </label>
+                <label class="field">
+                  <span class="field-label">Throws</span>
+                  <select id="f-throws"><option value="">none</option><option value="R">Right</option><option value="L">Left</option></select>
+                </label>
+                <label class="field">
+                  <span class="field-label">Height <span class="field-aux num" id="height-aux">in</span></span>
+                  <input id="f-height_in" class="num" type="number" min="36" max="96" placeholder="72" />
+                </label>
+                <label class="field">
+                  <span class="field-label">Weight <span class="field-aux">lb</span></span>
+                  <input id="f-weight_lb" class="num" type="number" min="60" max="500" placeholder="190" />
+                </label>
+                <label class="field field-wide">
+                  <span class="field-label">Hometown</span>
+                  <input id="f-hometown" maxlength="60" placeholder="Chicago, IL" />
+                </label>
+              </div>
+            </details>
+            <details class="more">
+              <summary class="more-head"><span>Swing numbers</span><span class="more-note num" id="metrics-note"></span></summary>
+              <div class="more-body">
+                <p class="more-lead">Tick a number to use it. A card with numbers gets a stats table and the 2025 hitters it swings like.</p>
+                <div class="metrics" id="metrics"></div>
+              </div>
+            </details>
+          </article>
+
+          <article class="panel panel-style" id="panel-style">
+            <header class="panel-head">
+              <h2><span class="step-no">3</span> Style</h2>
+              <p class="panel-sub">A style is a front template and a prompt for the background.</p>
+            </header>
+            <div class="styles" id="styles" role="radiogroup" aria-label="Style"></div>
+          </article>
+
+          <div class="generate">
+            <button class="btn btn-accent btn-xl" id="generate-btn" type="submit" disabled>Generate</button>
+            <p class="generate-note" id="generate-note" role="status"></p>
+          </div>
+        </form>
+
+        <!-- The card, once posted. results.js. -->
+        <section class="result" id="result" aria-labelledby="result-title" hidden>
+          <div class="result-card">
+            <div class="card-wait" id="card-wait"><p id="card-wait-text"></p></div>
+            <button class="card-flip" id="card-flip" type="button" hidden>
+              <span class="card-inner">
+                <span class="card-face card-front"><img id="card-front" alt="The front of the card" /></span>
+                <span class="card-face card-back">
+                  <img id="card-back" alt="The back of the card" hidden />
+                  <span class="card-pending" id="card-back-wait">Writing the back</span>
+                </span>
+              </span>
+            </button>
+          </div>
+          <div class="result-side">
+            <h2 class="result-title" id="result-title" tabindex="-1"></h2>
+            <p class="result-status num" id="result-status" role="status"></p>
+            <div class="table-wrap">
+              <table class="table ledger">
+                <caption class="sr-only">Each step's model, licence, where it ran and how long it took</caption>
+                <thead><tr><th>Step</th><th>Model</th><th>Licence</th><th>Ran on</th><th>Time</th></tr></thead>
+                <tbody id="result-ledger"></tbody>
+              </table>
+            </div>
+            <ul class="warnings" id="result-warnings" aria-label="What the photo checks found" hidden></ul>
+            <p class="msg msg-error" id="result-error" role="alert" hidden></p>
+            <div class="result-actions">
+              <button class="btn btn-secondary" id="result-flip" type="button" aria-pressed="false" disabled>Flip</button>
+              <button class="btn btn-secondary" id="save-front" type="button" disabled>Save front</button>
+              <button class="btn btn-secondary" id="save-back" type="button" disabled>Save back</button>
+              <button class="btn btn-primary" id="result-again" type="button">Make another</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- The node: models, GPUs, and the last card's ledger. node.js. -->
+      <main class="view view-page" id="view-node" data-view="node" aria-labelledby="node-title" hidden>
+        <header class="page-head">
+          <h1 class="page-title" id="node-title" tabindex="-1">The node</h1>
+          <p class="page-lead">Each service as it describes itself on /healthz, every 5 s. Each GPU as nvidia-smi sees it on /gpu, every 2 s.</p>
+        </header>
+        <section class="panel" aria-labelledby="node-models-title">
+          <h2 class="panel-title" id="node-models-title">Models</h2>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Service</th><th>Serving</th><th>Backend</th><th>Runs on</th><th>Memory</th></tr></thead>
+              <tbody id="node-services"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="panel" aria-labelledby="node-gpus-title">
+          <h2 class="panel-title" id="node-gpus-title">GPUs</h2>
+          <p class="empty" id="node-gpus-note"></p>
+          <div class="gpus" id="node-gpus"></div>
+        </section>
+        <section class="panel" aria-labelledby="node-last-title-h">
+          <h2 class="panel-title" id="node-last-title-h">The last card</h2>
+          <p class="empty" id="node-last-none">No card made in this tab yet.</p>
+          <div id="node-last" hidden>
+            <p class="node-last-head">
+              <span id="node-last-title"></span>
+              <button class="btn btn-ghost btn-sm" id="node-last-show" type="button">Show the card</button>
+            </p>
+            <div class="table-wrap">
+              <table class="table ledger">
+                <thead><tr><th>Step</th><th>Model</th><th>Licence</th><th>Ran on</th><th>Time</th></tr></thead>
+                <tbody id="node-ledger"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- How it works: the pipeline in five lines, and the model table. how.js. -->
+      <main class="view view-page" id="view-how" data-view="how" aria-labelledby="how-title" hidden>
+        <header class="page-head">
+          <h1 class="page-title" id="how-title" tabindex="-1">How it works</h1>
+          <p class="page-lead">One card, from the photo you send to the two PNGs you get back. No step calls a service off the node.</p>
+        </header>
+        <p class="empty" id="how-msg" role="status">Reading the models from the node.</p>
+        <section class="panel" aria-labelledby="how-pipeline-title">
+          <h2 class="panel-title" id="how-pipeline-title">The pipeline</h2>
+          <ol class="how-steps" id="how-steps"></ol>
+        </section>
+        <section class="panel" aria-labelledby="how-models-title">
+          <h2 class="panel-title" id="how-models-title">The models</h2>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Step</th><th>Model</th><th>Licence</th><th>Pinned commit</th><th>Runs on</th><th>Memory</th></tr></thead>
+              <tbody id="model-table"></tbody>
+            </table>
+          </div>
+          <p class="note">The repos and the commits come from <code>deploy/models.env</code>, the file the deploy downloads the weights from.</p>
+          <p class="note" id="how-mock" hidden>On this stack every model is a stand-in, and each one says so where it runs.</p>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/app/app.js"></script>
+  </body>
+</html>

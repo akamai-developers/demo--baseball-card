@@ -31,6 +31,18 @@ for compose, and plain `sudo` drops them.
 If 8443 is taken on your machine, set `GATEWAY_PORT` in `.env`. The stack, the
 Makefile and the tests all read it.
 
+## the browser tests
+
+`tests/integration/test_app.py` and `tests/integration/test_app_camera.py`
+run the page in Playwright's Chromium against the mock stack. The api serves
+the page from its image, so after a change under `web/app/` run `make up-mock`
+again before the tests. They write screenshots to `out/ui/` at 1920 x 1080 and
+390 x 844: look at them after a change to the layout. The camera tests play the
+test photo as a fake camera, made with `ffmpeg`, and skip without it.
+
+To run the api from a checkout rather than from its image, `make web-vendor`
+first. It downloads the face detector into `web/vendor/`, which git ignores.
+
 ## run the lint
 
 ```bash
@@ -38,7 +50,7 @@ make lint         # ruff check and ruff format --check
 uv run ruff format .   # to fix the format
 ```
 
-## the README's picture
+## the pictures
 
 `docs/card-front.jpg` and `docs/card-back.jpg` are the two PNGs of
 `make card-fixture` at half size. A change that shows on either side of the
@@ -51,6 +63,31 @@ from PIL import Image
 for side in ('front', 'back'):
     Image.open(f'out/card-{side}.png').convert('RGB').resize((750, 1050), Image.LANCZOS).save(
         f'docs/card-{side}.jpg', quality=88, optimize=True, progressive=True)"
+```
+
+The style picker shows the front of the test card in each style,
+`web/app/styles/<style>.jpg` at 192 x 268:
+
+```bash
+for style in akamai classic; do
+  make card-fixture STYLE=$style
+  uv run python -c "
+from PIL import Image
+Image.open('out/card-front.png').convert('RGB').resize((192, 268), Image.LANCZOS).save(
+    'web/app/styles/$style.jpg', quality=85, optimize=True, progressive=True)"
+done
+```
+
+`docs/app.jpg` is the browser test's screenshot of the test card on the mock
+stack, at two thirds:
+
+```bash
+make up-mock
+uv run pytest tests/integration/test_app.py -q -k test_photo
+uv run python -c "
+from PIL import Image
+Image.open('out/ui/result-front-1920x1080.png').convert('RGB').resize((1280, 720), Image.LANCZOS).save(
+    'docs/app.jpg', quality=85, optimize=True, progressive=True)"
 ```
 
 ## versions

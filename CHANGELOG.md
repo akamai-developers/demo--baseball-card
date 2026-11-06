@@ -4,6 +4,51 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The version is the
 one `packages/common` reports, and every `pyproject.toml` carries it.
 
+## [0.4.0] - 2026-11-06
+
+The browser app, served by the api and tested in Chromium against the mock
+stack.
+
+### Added
+
+- The app at `/`. Sign in with the key, then a photo from a file or the
+  camera, a name, the bio and up to six swing numbers, a style, and Generate.
+  The card's front comes in before its back, beside the ledger: each step's
+  model, licence, where it ran and milliseconds. Flip, Save front and Save
+  back at 1500 x 2100, and Make another, which keeps the form as it was.
+- The camera tab: a mirrored preview, a guide drawn from the head, and seven
+  checks (centred, size, headroom, level, light, sharpness, stillness). When
+  all pass for 1.5 s it counts down from 3 and takes the photo. The rules are
+  `web/app/framing.js`, arithmetic with no DOM, tested row by row.
+- The face found in the browser by BlazeFace, on the whole photo and two
+  crops, and posted as the `face` box in the photo's pixels. No face posts
+  null and the card says so. No detector posts no field, and the card says
+  nothing about a face.
+- Node: each service as `/healthz` describes it, every 5 s; each GPU from
+  `/gpu`, every 2 s while the view is on show; and the last card's ledger.
+  How it works: the pipeline in five lines and the model table, every name
+  read from `GET /models`.
+- `web/vendor.lock` and `web/vendor.py`: the detector's four files, pinned by
+  sha256. `make web-vendor` downloads them for a checkout. The api image
+  downloads its own copy when it is built.
+- The api serves `/`, `/app/*` and `/vendor/*` without the key: the page with
+  `Cache-Control: no-store`, its files with `no-cache` and an ETag.
+- Tests: the app end to end at 1920 x 1080 and 390 x 844, the front before
+  the back, the post field by field, the camera with a fake device made from
+  the test photo, the framing table, the face box, the key never in a URL and
+  no request off the page's origin, the open paths through Caddy, the vendor
+  lock, the motion tokens, and `state.js` held to `styles.json`, `schemas.py`,
+  `pipeline.py` and `examples/stats.json`.
+
+### Notes
+
+- The page is 4,427 lines of JavaScript, CSS and HTML, without a framework
+  or a build step.
+- The page uses the card's font and logo, byte for byte. A test holds the
+  copies to the originals.
+- The camera needs `localhost` or HTTPS. The mock stack is on localhost, and
+  so is an SSH tunnel to the node, which comes with the deploy.
+
 ## [0.3.0] - 2026-11-06
 
 A card through the whole mock stack: the api's pipeline, the comps, the photo

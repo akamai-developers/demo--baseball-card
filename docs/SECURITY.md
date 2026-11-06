@@ -24,7 +24,8 @@ so the internal network is not a trust boundary. Caddy routes each model
 service's one path, `/cutout`, `/art/generate`, `/v1/*` and `/gpu`, and
 nothing else of theirs.
 
-**One path is open: `/livez`.** It says `ok` and nothing else. Every other
+**One route is open: `/livez`.** It says `ok` and nothing else. The browser
+app's page and files are open too, and "the page" below says why. Every other
 path answers 401 without the key, one that does not exist included, so a
 stranger learns nothing about the route list.
 
@@ -145,6 +146,60 @@ model wrote is escaped before it goes into the page.
 uv run pytest tests/unit/test_card_render.py tests/unit/test_card_front.py -q -k "network or escaped"
 ```
 
+## the page
+
+**The page is open, and every route it calls needs the key.** `/`, the files
+under `/app/` and the face detector under `/vendor/` answer without the key,
+because the key is typed into the page. Everything the page shows comes from
+routes that need it. A file the page does not have is a 404, and a path with
+`..` in it is never open.
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' $GATEWAY/                               # 200
+curl -s -o /dev/null -w '%{http_code}\n' --path-as-is $GATEWAY/app/../healthz   # 401
+uv run pytest tests/unit/test_app_routes.py -q
+```
+
+**The key lives in one tab.** The page keeps it in `sessionStorage`, which
+ends with the tab: no cookie, no `localStorage`. It goes on every request as
+`Authorization: Bearer` and never in a URL. The card's pictures are fetched
+with the header and shown from `blob:` URLs. When the node stops taking the
+key, after a rotation, the tab signs out and says why. The browser test records
+every request of a whole visit and checks each URL for the key.
+
+```bash
+uv run pytest tests/integration/test_app.py -q -k "key or sign"
+```
+
+**The page talks to its own origin and nowhere else.** No CDN, no font
+service, no analytics. The font, the logo and the face detector come from the
+node. The browser test checks the origin of every request, and this grep over
+the page prints nothing:
+
+```bash
+grep -rnoE 'https?://[a-zA-Z0-9.-]+' web/app
+```
+
+How it works links to each model's repo. Those addresses come from
+`GET /models`, open in a new tab, and send no referrer: the page sets
+`<meta name="referrer" content="no-referrer">`.
+
+**The face detector is pinned.** MediaPipe Tasks Vision and its BlazeFace
+model are not in the repo. `web/vendor.lock` lists each file with its sha256.
+The api image downloads them when it is built and checks every hash, and a
+wrong hash fails the build.
+
+```bash
+uv run pytest tests/unit/test_web_vendor.py -q
+make web-vendor && uv run python web/vendor.py --check
+```
+
+**A photo leaves the browser once, re-encoded.** The browser decodes it,
+applies its EXIF rotation, and sends a new JPEG of 2048 px at most, with no
+EXIF. The face is found in the browser and only its box goes with the photo.
+The camera's frames stay in the page until the photo is taken. The api then
+decodes and re-encodes the photo again, as the data section says.
+
 ## not built yet
 
 These are the design. Each moves up to a claim with a command when it is built.
@@ -163,6 +218,8 @@ These are the design. Each moves up to a claim with a command when it is built.
 - One key for everyone. No accounts, scopes, expiry or audit log.
 - Every container reads the whole `.env`. On a laptop that is the key, the
   deploy settings and `HF_TOKEN` when one is set.
+- Anything that runs in the page can read the key from `sessionStorage`, a
+  browser extension included.
 
 ## reporting a problem
 

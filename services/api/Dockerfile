@@ -36,6 +36,14 @@ RUN playwright install --with-deps chromium \
 # The model repos and their pinned commits, which GET /models reads.
 COPY deploy/models.env /app/deploy/models.env
 
+# The browser app. The lock file and the fetcher come first and on their own,
+# so a change to the page does not download the 12 MB face detector again.
+# .dockerignore keeps any local web/vendor/ out of the build context: the image
+# fetches its own copy and checks every sha256 against web/vendor.lock.
+COPY web/vendor.lock web/vendor.py /app/web/
+RUN python /app/web/vendor.py
+COPY web/app /app/web/app
+
 # The data volume is created with this ownership the first time it is mounted.
 RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin app \
     && mkdir -p /data && chown app:app /data
