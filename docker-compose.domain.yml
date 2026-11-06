@@ -1,0 +1,27 @@
+# Domain mode. Added on top of docker-compose.yml when DOMAIN is set:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.domain.yml --profile gpu up -d
+#
+# Tunnel mode is the default and does not use this file at all.
+#
+# Two things change. Caddy's site address becomes the domain, which turns on
+# its automatic HTTPS, and the published ports become 80 and 443 on every
+# interface instead of one port on the loopback. Terraform opens those two
+# ports in the firewall only when the domain is set, so the two are turned on
+# together.
+#
+# Point the DNS A record for DOMAIN at the node's IP before you bring this up.
+# Let's Encrypt validates over port 80 against that record, and a failed
+# validation is rate limited.
+
+services:
+  caddy:
+    environment:
+      # A hostname here is what makes Caddy ask for a certificate. Empty is not
+      # allowed: it would fall back to :8443 while the firewall was open.
+      CADDY_SITE: ${DOMAIN:?DOMAIN must be set to use docker-compose.domain.yml}
+    # !override replaces the port list from docker-compose.yml instead of
+    # adding to it, so the loopback port is gone, not left beside these two.
+    ports: !override
+      - "80:80"
+      - "443:443"

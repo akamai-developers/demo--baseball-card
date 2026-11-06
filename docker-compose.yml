@@ -1,0 +1,102 @@
+# Profiles:
+#   mock  a laptop. Stub models, no GPU, no weights to download.
+#   gpu   the Akamai Cloud node. Real models.
+#
+# Caddy is the only service that publishes a port, on 127.0.0.1. Everything
+# else is reachable only on the internal network. tests/security/ holds that.
+# Domain mode replaces Caddy's port with 80 and 443: docker-compose.domain.yml.
+#
+# The model services answer to the plain names the Caddyfile and the api use:
+# llm here. The gpu profile's real ones carry a network alias back to the same
+# name, because one service cannot carry two images. Only one profile runs at a
+# time, so the alias never collides.
+
+name: baseball-card
+
+x-env: &env
+  # Settings for every container. .env is made by `make env` and holds the
+  # key. required: false lets `docker compose config` run in a fresh clone.
+  env_file:
+    - path: .env
+      required: false
+
+x-mock-service: &mock-service
+  <<: *env
+  profiles: ["mock"]
+  restart: unless-stopped
+  networks: [card]
+
+services:
+  caddy:
+    image: caddy:2.10.2-alpine
+    profiles: ["mock", "gpu"]
+    restart: unless-stopped
+    ports:
+      # The loopback address only. On a laptop that is the mock stack; on the
+      # node, make tunnel forwards a laptop port to it over SSH.
+      - "127.0.0.1:${GATEWAY_PORT:-8443}:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [card]
+
+  api:
+    <<: *env
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    profiles: ["mock", "gpu"]
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: api
+      DATA_DIR: /data
+      # The same address in both profiles, because the real service answers
+      # to the same name.
+      LLM_URL: http://llm:8000
+      # vLLM reports none of this about itself, so the api is told. The node's
+      # .env overrides all three.
+      LLM_MODEL: ${LLM_MODEL:-mock/wordlist}
+      LLM_LICENSE: ${LLM_LICENSE:-n/a}
+      LLM_RAN_ON: ${LLM_RAN_ON:-mock-gpu0}
+    volumes:
+      - card-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8080/livez', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    networks: [card]
+
+  # vLLM's two routes and its key check, without vLLM.
+  llm:
+    <<: *mock-service
+    build:
+      context: .
+      dockerfile: services/llm-mock/Dockerfile
+    environment:
+      SERVICE_NAME: llm
+      BACKEND: mock
+      DEVICE: cpu
+      LLM_MODEL: ${LLM_MODEL:-mock/wordlist}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/livez', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 3s
+
+volumes:
+  # SQLite, the photos and the cards.
+  card-data:
+  # Caddy's certificate in domain mode.
+  caddy-data:
+  caddy-config:
+
+networks:
+  card:
+    driver: bridge

@@ -1,0 +1,24 @@
+# Keep secrets, state and outputs out of every build context.
+.env
+.env.*
+secrets/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+
+.git/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+out/
+build-logs/
+docs/
+tests/
+BUILD_PROGRESS.md
+PROMPT.md
+build.sh
+CLAUDE.md
+.claude/

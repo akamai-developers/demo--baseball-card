@@ -1,0 +1,81 @@
+# The only listener in the stack. Everything else lives on the internal network.
+#
+# One file, two modes, chosen by the site address:
+#
+#   Tunnel mode (default). CADDY_SITE is unset, so the site address is :8443.
+#   No hostname means Caddy serves plain HTTP and asks for no certificate.
+#   docker-compose.yml binds that port to 127.0.0.1, and on the node you reach
+#   it with `make tunnel`. Nothing is reachable from the internet.
+#
+#   Domain mode. docker-compose.domain.yml sets CADDY_SITE to DOMAIN and
+#   publishes 80 and 443 instead. A hostname turns on Caddy's automatic HTTPS:
+#   it gets a Let's Encrypt certificate, binds 443, and redirects 80 to it.
+#   There is no contact address on that account, so Let's Encrypt cannot mail
+#   you before a certificate expires. Caddy renews on its own, so that only
+#   matters if the node is off when renewal is due.
+{
+	admin off
+	# HTTP/3 is off because the firewall only opens TCP 80 and 443. Advertising
+	# h3 over UDP 443 would send clients at a port the firewall drops.
+	servers {
+		protocols h1 h2
+	}
+	# Every log that is not the access log. When a client drops a response
+	# halfway, the reverse proxy logs the request it was serving, headers and
+	# all. No header belongs in a log, so they are deleted here too.
+	log default {
+		output stderr
+		format filter {
+			wrap console
+			fields {
+				request>headers delete
+				resp_headers delete
+				request>tls delete
+			}
+		}
+	}
+}
+
+(routes) {
+	# Bodies are capped before any service sees them. Photos are capped at 15 MB.
+	request_body {
+		max_size 20MB
+	}
+
+	# Method, path, status, duration. Headers are deleted, because the API key
+	# travels in the Authorization header and must never reach a log file.
+	log {
+		output stderr
+		format filter {
+			wrap console
+			fields {
+				request>headers delete
+				resp_headers delete
+				request>tls delete
+			}
+		}
+	}
+
+	# Only on a real TLS connection, so tunnel mode does not tell a client to
+	# pin HTTPS against a plain-HTTP loopback port.
+	@https protocol https
+	header @https Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+	# vLLM, OpenAI-compatible. Only /v1/* is proxied. vLLM's own key check
+	# skips any path that does not start with /v1, so /health and /metrics are
+	# open on the container and are not routed here.
+	handle /v1/* {
+		reverse_proxy llm:8000
+	}
+
+	# Everything else goes to the api. Its key gate answers 401 to any path
+	# without the key, one that does not exist included, and only /livez is
+	# open.
+	handle {
+		reverse_proxy api:8080
+	}
+}
+
+{$CADDY_SITE::8443} {
+	import routes
+}
