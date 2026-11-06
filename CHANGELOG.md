@@ -4,6 +4,66 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The version is the
 one `packages/common` reports, and every `pyproject.toml` carries it.
 
+## [0.6.0] - 2026-11-06
+
+The deploy to Akamai Cloud, built and tested here without the cloud.
+`make gpu-check` ran against the live API. Nothing in this release has run
+against a real node.
+
+### Added
+
+- `deploy/terraform`: one instance on the plan `GPU_COUNT` picks,
+  `g2-gpu-rtx4000a1-m` for 1 and `g2-gpu-rtx4000a2-s` for 2, or another
+  RTX 4000 Ada plan with that many cards through `LINODE_TYPE`, and a firewall
+  that drops everything but TCP 22 from `ADMIN_CIDR`, plus 80 and 443 in domain
+  mode. Both carry the tag `baseball-card`. Local state. The Linode provider
+  locked at 4.5.0.
+- `deploy/terraform/tests/node.tftest.hcl`: nine plans against a mock of the
+  provider, for the firewall in both modes, the plan for each GPU count, a plan
+  with the wrong number of cards refused, and the tag.
+- `deploy/cloud-init`: the NVIDIA driver, Docker and the NVIDIA container
+  toolkit on first boot, the driver held, a reboot, and an sshd drop-in that
+  takes keys only and no root.
+- `make gpu-check`, `deploy/scripts/gpu_check.py`: for the plan `GPU_COUNT`
+  picks, every region with GPUs, whether it can sell the plan right now and
+  its price, then the other one- and two-card RTX 4000 Ada plans. Three
+  read-only routes, no token needed. Exit 3 when `LINODE_REGION` cannot sell
+  it.
+- `make deploy`: gpu-check first, then Terraform, the wait for the driver and
+  the reboot, the repo over rsync less what git ignores, the node's `.env` on
+  SSH's stdin, 27 GB of weights, the images, and the wait for every model. It
+  prints how long each stage took.
+- `make tunnel`, `make check`, `make smoke`, `make rotate-key`, `make destroy`,
+  `make ssh` and `make gpu-logs`. `make check` proves the key on three routes
+  and the models on their cards. `make smoke` fails a card any stand-in
+  helped make. `make destroy` asks the API afterwards for anything still
+  tagged, by the exact tag.
+- `examples/openai_sdk.py`: Gemma 4 on the node through the OpenAI SDK, with
+  the gateway as `base_url` and the stack's key.
+- `docs/DEPLOY.md`, and SECURITY.md's claims about the node and what leaves
+  it, each with a command.
+- Tests: every deploy script end to end against stand-ins for Terraform, SSH,
+  rsync, the API and uv, none with a secret in an argument; the node's `.env`
+  read back by bash and by compose in both layouts and both modes; gpu-check
+  against the API's recorded answers and through a stand-in API; the download
+  list; `make check` and `make smoke` against the mock stack.
+
+### Changed
+
+- vLLM runs with `VLLM_NO_USAGE_STATS=1`, so it sends nothing to
+  `stats.vllm.ai`.
+- `make lint` runs shellcheck, `terraform fmt -check` and
+  `terraform validate` as well as ruff.
+- The secret scan reads Terraform's `zh:` hashes as hashes.
+
+### Notes
+
+- On 2026-11-06 at 22:28 UTC six regions could sell both plans: `de-fra-2`,
+  `fr-par`, `in-bom-2`, `jp-osa`, `sg-sin-2` and `us-ord`. Earlier that day
+  none could.
+- The weights come down in vLLM's container through `docker compose run`, and
+  FLUX's by its folders only: 16.0 GB of its repo's 23.7.
+
 ## [0.5.0] - 2026-11-06
 
 The real model services and the two GPU layouts. Built and tested here with the

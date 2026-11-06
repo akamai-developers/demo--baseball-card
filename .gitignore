@@ -9,7 +9,7 @@ CLAUDE.md
 
 # Secrets and state.
 .env
-.env.tmp
+.env.tmp*
 secrets/
 *.tfvars
 *.tfstate

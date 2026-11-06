@@ -35,8 +35,9 @@ SHAPES = {
     "a bearer token": re.compile(r"Bearer [A-Za-z0-9._\-]{24,}"),
 }
 
-# A sha256 in a lock file is 64 hex characters and no secret.
-HASH = re.compile(r"sha256[:=]\s*[0-9a-f]{64}")
+# A sha256 in a lock file is 64 hex characters and no secret. Terraform's lock
+# writes the provider's zip hashes as zh: and 64 hex characters.
+HASH = re.compile(r"(?:sha256[:=]\s*|\bzh:)[0-9a-f]{64}")
 
 
 def committable() -> list[Path]:
@@ -79,6 +80,7 @@ def test_the_patterns_catch_what_they_are_for() -> None:
         assert found_in(sample), sample
     for sample in (
         f"sha256:{hexkey}",
+        f'    "zh:{hexkey}",',
         "CARD_API_KEY=",
         "Authorization: Bearer $CARD_API_KEY",
         'VLLM_API_KEY: "${CARD_API_KEY:?CARD_API_KEY must be set}"',
@@ -112,6 +114,7 @@ def test_no_committable_file_holds_this_boxs_key() -> None:
     [
         ".env",
         ".env.tmp",
+        ".env.tmp.Ab12Cd",
         "secrets/ssh/id_ed25519",
         "deploy/terraform/terraform.tfstate",
         "deploy/terraform/terraform.tfstate.backup",

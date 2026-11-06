@@ -1,0 +1,1822 @@
+{
+ "data": [
+  {
+   "region": "us-central",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "us-central",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "us-central",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "us-central",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "us-central",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "us-central",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "us-central",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "us-central",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "us-central",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "us-central",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "us-central",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "us-west",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "us-west",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "us-west",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "us-west",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "us-west",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "us-west",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "us-west",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "us-west",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "us-west",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "us-west",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "us-west",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "us-southeast",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "us-southeast",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "us-southeast",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "us-southeast",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "us-southeast",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "us-southeast",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "us-southeast",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "us-southeast",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "us-southeast",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "us-southeast",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "us-southeast",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "us-east",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "us-east",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "us-east",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "us-east",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "us-east",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "us-east",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "us-east",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "us-east",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "us-east",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "us-east",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "us-east",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "eu-west",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "eu-west",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "eu-west",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "eu-west",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "eu-west",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "eu-west",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "eu-west",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "eu-west",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "eu-west",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "eu-west",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "eu-west",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "ap-south",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "ap-south",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "ap-south",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "ap-south",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "ap-south",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "ap-south",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "ap-south",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "ap-south",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "ap-south",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "ap-south",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "ap-south",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "eu-central",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "eu-central",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "eu-central",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "eu-central",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "eu-central",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "eu-central",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "eu-central",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "eu-central",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "eu-central",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "eu-central",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "eu-central",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "ap-northeast",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "ap-northeast",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "ap-northeast",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "ap-northeast",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "ap-northeast",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "ap-northeast",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "ap-northeast",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "ap-northeast",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "ap-northeast",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "ap-northeast",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "ap-northeast",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "ap-west",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "ap-west",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "ap-west",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "ap-west",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "ap-west",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "ap-west",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "ap-west",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "ap-west",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "ap-west",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "ap-west",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "ap-west",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "ca-central",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "ca-central",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "ca-central",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "ca-central",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "ca-central",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "ca-central",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "ca-central",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "ca-central",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "ca-central",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "ca-central",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "ca-central",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "ap-southeast",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "ap-southeast",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "ap-southeast",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "ap-southeast",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "ap-southeast",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "ap-southeast",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "ap-southeast",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "ap-southeast",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "ap-southeast",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "ap-southeast",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "ap-southeast",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "us-iad",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "us-iad",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "us-iad",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "us-iad",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "us-iad",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "us-iad",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "us-iad",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "us-iad",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "us-iad",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "us-iad",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "us-iad",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "us-ord",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "us-ord",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "us-ord",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": true
+  },
+  {
+   "region": "us-ord",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": true
+  },
+  {
+   "region": "us-ord",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": true
+  },
+  {
+   "region": "us-ord",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": true
+  },
+  {
+   "region": "us-ord",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": true
+  },
+  {
+   "region": "us-ord",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": true
+  },
+  {
+   "region": "us-ord",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": true
+  },
+  {
+   "region": "us-ord",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "us-ord",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "fr-par",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "fr-par",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "fr-par",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": true
+  },
+  {
+   "region": "fr-par",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": true
+  },
+  {
+   "region": "fr-par",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": true
+  },
+  {
+   "region": "fr-par",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": true
+  },
+  {
+   "region": "fr-par",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": true
+  },
+  {
+   "region": "fr-par",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": true
+  },
+  {
+   "region": "fr-par",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": true
+  },
+  {
+   "region": "fr-par",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": true
+  },
+  {
+   "region": "fr-par",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": true
+  },
+  {
+   "region": "us-sea",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "us-sea",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "us-sea",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "us-sea",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "us-sea",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "us-sea",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "us-sea",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "us-sea",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "us-sea",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "us-sea",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "us-sea",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "br-gru",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "br-gru",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "br-gru",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "br-gru",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "br-gru",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "br-gru",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "br-gru",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "br-gru",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "br-gru",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "br-gru",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "br-gru",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "nl-ams",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "nl-ams",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "nl-ams",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "nl-ams",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "nl-ams",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "nl-ams",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "nl-ams",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "nl-ams",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "nl-ams",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "nl-ams",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "nl-ams",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "se-sto",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "se-sto",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "se-sto",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "se-sto",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "se-sto",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "se-sto",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "se-sto",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "se-sto",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "se-sto",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "se-sto",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "se-sto",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "es-mad",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "es-mad",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "es-mad",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "es-mad",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "es-mad",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "es-mad",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "es-mad",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "es-mad",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "es-mad",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "es-mad",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "es-mad",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "in-maa",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "in-maa",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "in-maa",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "in-maa",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "in-maa",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "in-maa",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "in-maa",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "in-maa",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "in-maa",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "in-maa",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "in-maa",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "jp-osa",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "jp-osa",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "jp-osa",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": true
+  },
+  {
+   "region": "jp-osa",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": true
+  },
+  {
+   "region": "jp-osa",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": true
+  },
+  {
+   "region": "jp-osa",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": true
+  },
+  {
+   "region": "jp-osa",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": true
+  },
+  {
+   "region": "jp-osa",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": true
+  },
+  {
+   "region": "jp-osa",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": true
+  },
+  {
+   "region": "jp-osa",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": true
+  },
+  {
+   "region": "jp-osa",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": true
+  },
+  {
+   "region": "it-mil",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "it-mil",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "it-mil",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "it-mil",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "it-mil",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "it-mil",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "it-mil",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "it-mil",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "it-mil",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "it-mil",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "it-mil",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "us-mia",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "us-mia",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "us-mia",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "us-mia",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "us-mia",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "us-mia",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "us-mia",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "us-mia",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "us-mia",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "us-mia",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "us-mia",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "id-cgk",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "id-cgk",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "id-cgk",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "id-cgk",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "id-cgk",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "id-cgk",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "id-cgk",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "id-cgk",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "id-cgk",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "id-cgk",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "id-cgk",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "us-lax",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "us-lax",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "us-lax",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "us-lax",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "us-lax",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "us-lax",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "us-lax",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "us-lax",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "us-lax",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "us-lax",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "us-lax",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "gb-lon",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "gb-lon",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "gb-lon",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "gb-lon",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "gb-lon",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "gb-lon",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "gb-lon",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "gb-lon",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "gb-lon",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "gb-lon",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "gb-lon",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "au-mel",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "au-mel",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "au-mel",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "au-mel",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "au-mel",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "au-mel",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "au-mel",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "au-mel",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "au-mel",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "au-mel",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "au-mel",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "in-bom-2",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "in-bom-2",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "in-bom-2",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": true
+  },
+  {
+   "region": "in-bom-2",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": true
+  },
+  {
+   "region": "in-bom-2",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": true
+  },
+  {
+   "region": "in-bom-2",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": true
+  },
+  {
+   "region": "in-bom-2",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": true
+  },
+  {
+   "region": "in-bom-2",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": true
+  },
+  {
+   "region": "in-bom-2",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": true
+  },
+  {
+   "region": "in-bom-2",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": true
+  },
+  {
+   "region": "in-bom-2",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": true
+  },
+  {
+   "region": "de-fra-2",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "de-fra-2",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "de-fra-2",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": true
+  },
+  {
+   "region": "de-fra-2",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": true
+  },
+  {
+   "region": "de-fra-2",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": true
+  },
+  {
+   "region": "de-fra-2",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": true
+  },
+  {
+   "region": "de-fra-2",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": true
+  },
+  {
+   "region": "de-fra-2",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": true
+  },
+  {
+   "region": "de-fra-2",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": true
+  },
+  {
+   "region": "de-fra-2",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": true
+  },
+  {
+   "region": "de-fra-2",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": true
+  },
+  {
+   "region": "sg-sin-2",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "sg-sin-2",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "sg-sin-2",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": true
+  },
+  {
+   "region": "sg-sin-2",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": true
+  },
+  {
+   "region": "sg-sin-2",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": true
+  },
+  {
+   "region": "sg-sin-2",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": true
+  },
+  {
+   "region": "sg-sin-2",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": true
+  },
+  {
+   "region": "sg-sin-2",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": true
+  },
+  {
+   "region": "sg-sin-2",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": true
+  },
+  {
+   "region": "sg-sin-2",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "sg-sin-2",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "jp-tyo-3",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "jp-tyo-3",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "jp-tyo-3",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "jp-tyo-3",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "jp-tyo-3",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "jp-tyo-3",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "jp-tyo-3",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "jp-tyo-3",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "jp-tyo-3",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "jp-tyo-3",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "jp-tyo-3",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "us-iad-2",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "us-iad-2",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "us-iad-2",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "us-iad-2",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "us-iad-2",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "us-iad-2",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "us-iad-2",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "us-iad-2",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "us-iad-2",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "us-iad-2",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "us-iad-2",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  },
+  {
+   "region": "fr-par-2",
+   "plan": "g6-standard-2",
+   "available": true
+  },
+  {
+   "region": "fr-par-2",
+   "plan": "g1-gpu-rtx6000-1",
+   "available": false
+  },
+  {
+   "region": "fr-par-2",
+   "plan": "g2-gpu-rtx4000a1-s",
+   "available": false
+  },
+  {
+   "region": "fr-par-2",
+   "plan": "g2-gpu-rtx4000a1-m",
+   "available": false
+  },
+  {
+   "region": "fr-par-2",
+   "plan": "g2-gpu-rtx4000a1-l",
+   "available": false
+  },
+  {
+   "region": "fr-par-2",
+   "plan": "g2-gpu-rtx4000a1-xl",
+   "available": false
+  },
+  {
+   "region": "fr-par-2",
+   "plan": "g2-gpu-rtx4000a2-s",
+   "available": false
+  },
+  {
+   "region": "fr-par-2",
+   "plan": "g2-gpu-rtx4000a2-m",
+   "available": false
+  },
+  {
+   "region": "fr-par-2",
+   "plan": "g2-gpu-rtx4000a2-hs",
+   "available": false
+  },
+  {
+   "region": "fr-par-2",
+   "plan": "g2-gpu-rtx4000a4-s",
+   "available": false
+  },
+  {
+   "region": "fr-par-2",
+   "plan": "g2-gpu-rtx4000a4-m",
+   "available": false
+  }
+ ],
+ "page": 1,
+ "pages": 1,
+ "results": 363
+}

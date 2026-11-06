@@ -61,12 +61,27 @@ test photo as a fake camera, made with `ffmpeg`, and skip without it.
 To run the api from a checkout rather than from its image, `make web-vendor`
 first. It downloads the face detector into `web/vendor/`, which git ignores.
 
+## the deploy scripts
+
+No test calls the live Linode API or makes a cloud resource.
+`tests/unit/test_deploy_scripts.py` runs every script in `deploy/scripts/`
+against stand-ins for Terraform, SSH, rsync and the API, and fails if the key
+or the Linode token is ever an argument of a command.
+`tests/unit/test_gpu_check.py` reads the API's recorded answers in
+`tests/fixtures/linode/`. `tests/fixtures/SOURCES.md` says when and how they
+were recorded. `tests/security/test_terraform.py` runs `terraform test`, which
+plans against a mock of the Linode provider. It needs `terraform` 1.7 or newer,
+and its first run downloads the provider the lock file pins.
+
 ## run the lint
 
 ```bash
-make lint         # ruff check and ruff format --check
+make lint         # ruff, shellcheck, terraform fmt and terraform validate
 uv run ruff format .   # to fix the format
+terraform -chdir=deploy/terraform fmt -recursive   # to fix the HCL
 ```
+
+`make lint` needs `shellcheck` and `terraform` besides `uv`.
 
 ## the pictures
 

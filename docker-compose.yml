@@ -283,7 +283,7 @@ services:
   # Gemma 4 12B on the stock vLLM image. Nothing of ours runs in here: it is
   # the OpenAI-compatible API developers already know, and examples/ shows the
   # OpenAI SDK pointed straight at it. No env_file: vLLM needs its key, the
-  # cache and an optional token, and nothing else in .env.
+  # cache, an optional token and its usage report off, and nothing else in .env.
   llm-gpu:
     profiles: ["gpu"]
     image: vllm/vllm-openai:v0.29.0
@@ -298,6 +298,10 @@ services:
       HF_HOME: /hf-cache
       # Only for a gated model repo. The pinned one is not.
       HF_TOKEN: ${HF_TOKEN:-}
+      # vLLM reports the hardware, its settings and the model's architecture to
+      # stats.vllm.ai unless this is set. No prompt or key goes, but this demo
+      # says nothing leaves the node, so nothing does.
+      VLLM_NO_USAGE_STATS: "1"
     # LLM_MODEL is the one name the api and vLLM must agree on: the api puts it
     # in every request, and vLLM answers 404 to a name it does not serve. The
     # node's .env sets it and LLM_REVISION from deploy/models.env. Change one and

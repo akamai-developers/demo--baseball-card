@@ -243,27 +243,165 @@ EXIF. The face is found in the browser and only its box goes with the photo.
 The camera's frames stay in the page until the photo is taken. The api then
 decodes and re-encodes the photo again, as the data section says.
 
-## not built yet
+## the node
 
-These are the design. Each moves up to a claim with a command when it is built.
+These are built and tested here against a mock of the Linode provider and
+stand-ins for SSH and the API. None has been checked on a real node yet. The
+commands marked "on a node" are for after `make deploy`.
 
-- The firewall: inbound TCP 22 from `ADMIN_CIDR` only, and 80 and 443 in domain
-  mode. Everything else dropped.
-- `make tunnel`: `ssh -N -L 8443:127.0.0.1:8443` with the repo's own key.
-- The host: SSH keys only, root login and password login off, a `deploy` user,
-  a keypair at `secrets/ssh/id_ed25519` and a pinned host key.
-- The node's `.env` at mode 600, written over SSH, with the key on no command
-  line on the node.
-- `make rotate-key`, and a 401 for the old key after it.
+**Inbound is SSH from one address, and nothing else.** The firewall drops
+every inbound packet no rule accepts. Tunnel mode has one rule: TCP 22 from
+`ADMIN_CIDR`, your address as a `/32` when `.env` leaves it empty. Domain mode
+adds TCP 80 and 443 from anywhere, for Let's Encrypt and browsers, and keeps 22
+to the one address. The node has no private address. Outbound is open: the
+node downloads its driver, images and weights.
+
+```bash
+uv run pytest tests/security/test_terraform.py -q
+terraform -chdir=deploy/terraform output inbound_rules    # on a node
+```
+
+From outside `ADMIN_CIDR`, every port of a tunnel-mode node should time out.
+From inside it, this should print 22 and nothing else. Not run yet:
+
+```bash
+IP=$(terraform -chdir=deploy/terraform output -raw ip_address)
+for port in 22 80 443 8000 8001 8002 8003 8080 8443; do
+  timeout 4 bash -c "</dev/tcp/$IP/$port" 2>/dev/null && echo "$port"
+done
+```
+
+**The tunnel is the way in.** On the node Caddy binds `127.0.0.1:8443`, and
+`make tunnel` runs `ssh -N -L 8443:127.0.0.1:8443 deploy@<ip>` with the
+repo's key. SSH encrypts the traffic. Close the tunnel, and only SSH reaches
+the node. The local end binds your machine's loopback only.
+
+```bash
+uv run pytest tests/unit/test_deploy_scripts.py -q -k tunnel
+```
+
+**SSH takes keys only, and no root.** cloud-init writes an sshd drop-in:
+`PermitRootLogin no`, `PasswordAuthentication no`,
+`KbdInteractiveAuthentication no`, `AuthenticationMethods publickey`, no agent
+forwarding. No account has a password. The `deploy` user owns the repo and
+runs Docker.
+
+```bash
+uv run pytest tests/security/test_terraform.py -q -k "sshd or cloud_init"
+make ssh    # on a node, then: sudo sshd -T | grep -E 'permitrootlogin|passwordauthentication'
+```
+
+**The node's key is the repo's own, and its host key is pinned.**
+`make deploy` makes `secrets/ssh/id_ed25519` the first time, mode 600, with no
+passphrase, for this node and nothing else. Every script passes it with
+`IdentitiesOnly=yes`, and keeps the node's host key in
+`secrets/ssh/known_hosts`, never in `~/.ssh/`. The first connection learns the
+host key, and every later one refuses a different key. Linode hands addresses
+out again, so the deploy forgets an address's key only when Terraform has just
+made or replaced the instance there.
+
+```bash
+uv run pytest tests/unit/test_deploy_scripts.py -q -k "forgets or forget or keeps"
+git check-ignore -v secrets/ssh/id_ed25519
+```
+
+**The node's `.env` holds the key at mode 600, and the key is on no command
+line.** `make deploy` builds the node's `.env` in memory and sends it on SSH's
+stdin, into a file made under `umask 077`. Every script hands the key to
+`curl` on stdin as a config line. On the node, scripts read it from the node's
+own `.env`, or ask the api inside its container. The tests run every deploy
+script against stand-ins and fail if the key or the Linode token was ever an
+argument of any command.
+
+```bash
+uv run pytest tests/unit/test_deploy_scripts.py tests/unit/test_deploy_node_env.py -q
+make ssh    # on a node, then: stat -c '%a %U' /opt/baseball-card/.env    # 600 deploy
+```
+
+**The node gets only what it needs.** Its `.env` is the key, the model pins,
+the GPU layout, `DOMAIN`, and the defaults block of `.env`. `.env.example`
+lists every line, and a test holds the list to what is written. Your
+`ADMIN_CIDR`, `GATEWAY_PORT` and `ALLOW_CLOUD_DEPLOY` stay on your machine.
+`HF_TOKEN` goes only from `.env`. One your shell exports for other work stays
+on your machine.
+
+**The Linode token never reaches the node.** Terraform reads it from your
+shell. The scripts give it to `curl` on stdin. Terraform's state holds the
+instance's settings and no secret: the API key never reaches Terraform. After a
+deploy this prints 0:
+
+```bash
+grep -cFf <(sed -n 's/^CARD_API_KEY=//p' .env) deploy/terraform/terraform.tfstate
+```
+
+**A rotated key is dead.** `make rotate-key` writes a new key into the node's
+`.env`, recreates the containers, writes it into yours, then fails unless the
+old key gets 401 from the api and from vLLM.
+
+```bash
+uv run pytest tests/unit/test_deploy_scripts.py -q -k "rotat or old_key"
+make rotate-key    # on a node
+```
+
+**Destroy deletes what the deploy made, and nothing else.** Terraform deletes
+only what its state holds. Then `make destroy` asks the API for anything still
+tagged `baseball-card`, and checks each row for that exact tag, so a resource
+with any other tag is never counted, let alone touched. Nothing in this repo
+deletes a resource through the API.
+
+```bash
+uv run pytest tests/unit/test_deploy_scripts.py tests/security/test_terraform.py -q -k "tag or destroy"
+```
+
+**Nothing is made by accident.** `make deploy`, `make rotate-key` and
+`make destroy` refuse to run without `ALLOW_CLOUD_DEPLOY=1` in `.env`, before
+any API call. `make deploy` asks the API whether the region can sell the plan
+first, and stops before Terraform when it cannot.
+
+```bash
+uv run pytest tests/unit/test_deploy_scripts.py -q -k "refuses or gpu_check"
+```
+
+## what leaves the node
+
+No photo and no stats. There is no provider model, and vLLM's usage report to
+`stats.vllm.ai` is off: `VLLM_NO_USAGE_STATS=1` in its environment.
+
+```bash
+uv run pytest tests/unit/test_compose_gpu.py -q -k usage
+```
+
+The node calls out to build and to load:
+
+- **Building:** Ubuntu's, Docker's and NVIDIA's apt repositories, Docker Hub
+  and GitHub's container registry for the images, PyPI and PyTorch's index for
+  the Python packages, Playwright's download of Chromium, and jsDelivr and
+  Google Cloud Storage for the face detector's pinned files.
+- **Loading:** Hugging Face, for the weights at their pinned commits, and for
+  the files' metadata each time a service loads them.
+- **Domain mode:** Let's Encrypt, for the certificate.
+
+`make deploy` asks `whatismyip.akamai.com` for your address, unless
+`ADMIN_CIDR` in `.env` names one.
 
 ## not covered
 
 - One key for everyone. No accounts, scopes, expiry or audit log.
-- Every container but vLLM reads the whole `.env`. On a laptop that is the
-  key, the deploy settings and `HF_TOKEN` when one is set.
+- Domain mode puts the gateway on the internet, and the key is its only guard.
+- The first connection to a node trusts whatever host key answers. There is no
+  other source for it.
+- The `deploy` user has passwordless sudo. It is in the `docker` group, which
+  is root on the node either way. The node is for this demo alone.
+- Every container but vLLM and Caddy reads the whole `.env`: on the node, the
+  key and `HF_TOKEN` when one is set, and on a laptop the deploy settings too.
 - vLLM's published image runs as root inside its container.
+- `make deploy` takes a setting from your shell before the line in `.env`,
+  `HF_TOKEN` alone excepted, so `GPU_COUNT=2 make deploy` works for one run.
 - Anything that runs in the page can read the key from `sessionStorage`, a
   browser extension included.
+- `examples/curl.md` and `docs/DEPLOY.md` put the key on `curl`'s command line,
+  as most API docs do. On a machine you share, use the scripts instead.
+- Nothing above about the node has been checked on a real node yet.
 
 ## reporting a problem
 

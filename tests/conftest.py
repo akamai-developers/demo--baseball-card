@@ -6,18 +6,32 @@ skip themselves with a readable reason when Docker or the mock stack is not up.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import shlex
 import shutil
 import subprocess
+import sys
 from pathlib import Path
+from types import ModuleType
 
 import httpx
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 TEST_KEY = "t" * 64
+
+
+def load_script(path: Path) -> ModuleType:
+    """A script that is not in a package, such as deploy/scripts/gpu_check.py,
+    imported by its path so a test can call its functions."""
+    spec = importlib.util.spec_from_file_location(path.stem, path)
+    module = importlib.util.module_from_spec(spec)
+    # A dataclass looks its module up here while the class is being made.
+    sys.modules[path.stem] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 @pytest.fixture

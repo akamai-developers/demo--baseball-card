@@ -1,6 +1,6 @@
 [project]
 name = "card-common"
-version = "0.5.0"
+version = "0.6.0"
 description = "Settings, schemas and bearer auth shared by every service."
 requires-python = ">=3.12"
 dependencies = [

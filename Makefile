@@ -1,9 +1,11 @@
 # baseball-card
 #
-# Laptop: make up-mock, then make test.
+# Laptop: make up-mock, then make card-mock.
+# Akamai Cloud: make gpu-check, deploy, tunnel, check, smoke, then destroy.
 #
 # `make help` prints the targets in the groups below. "On a laptop" needs no
-# GPU and no cloud account. "Development" is for changing this repo.
+# GPU and no cloud account. "On Akamai Cloud" makes a GPU node that bills by the
+# hour until make destroy. "Development" is for changing this repo.
 
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
@@ -38,7 +40,8 @@ VISION_BASE := baseball-card-vision-base:local
 VISION_BASE_CPU := baseball-card-vision-base-cpu:local
 
 .PHONY: help env up-mock down logs ps card-mock card card-fixture up-cpu-cutout \
-	card-cpu-cutout web-vendor vision-base vision-base-cpu test test-slow lint
+	card-cpu-cutout gpu-check deploy tunnel check smoke rotate-key destroy ssh gpu-logs \
+	web-vendor vision-base vision-base-cpu test test-slow lint
 
 # ---- On a laptop ----------------------------------------------------------
 # The mock stack: every service in Docker with stub models, behind Caddy on
@@ -123,6 +126,39 @@ up-cpu-cutout: vision-base-cpu ## The mock stack with the real BiRefNet on this 
 card-cpu-cutout: up-cpu-cutout ## A card cut out by the real BiRefNet on the CPU, into out/. PHOTO=
 	@$(MAKE) --no-print-directory card PHOTO="$(or $(PHOTO),tests/fixtures/portrait.jpg)"
 
+# ---- On Akamai Cloud ------------------------------------------------------
+# One GPU node, tagged baseball-card. deploy, rotate-key and destroy refuse to
+# run without ALLOW_CLOUD_DEPLOY=1 in .env, and need LINODE_TOKEN in your shell.
+# The node bills from make deploy until make destroy: 0.67 USD an hour with
+# GPU_COUNT=1, 1.05 with GPU_COUNT=2.
+
+gpu-check: ## Which regions can sell the GPU plan right now, and its price. Read-only
+	uv run --quiet deploy/scripts/gpu_check.py
+
+deploy: ## Stand up the GPU node and load the three models. Safe to run again
+	./deploy/scripts/deploy.sh
+
+tunnel: ## Forward localhost:GATEWAY_PORT to the node's gateway. Runs until ctrl-c
+	./deploy/scripts/tunnel.sh
+
+check: ## Prove the key is enforced and the models hold their GPUs. Read-only
+	./deploy/scripts/check.sh
+
+smoke: ## A card on the node, checked to have run on its GPUs, into out/smoke. PHOTO= STATS=
+	PHOTO="$(PHOTO)" STATS="$(STATS)" ./deploy/scripts/smoke.sh
+
+rotate-key: ## A new CARD_API_KEY on the node and in .env, and a 401 for the old one
+	./deploy/scripts/rotate-key.sh
+
+destroy: ## Delete everything tagged baseball-card, then check nothing is left. FORCE=1
+	./deploy/scripts/destroy.sh
+
+ssh: ## A shell on the node, with the repo's own key
+	./deploy/scripts/ssh.sh
+
+gpu-logs: ## Follow the node's container logs, or the driver install while it runs
+	./deploy/scripts/ssh.sh logs
+
 # ---- Development ----------------------------------------------------------
 # For changing this repo: the face detector's files, the torch base images, the
 # tests and the lint.
@@ -152,6 +188,12 @@ test: ## Run the tests. The integration tests skip until make up-mock
 test-slow: ## Run BiRefNet on this machine's CPU against the test photo
 	uv run --group real-cpu pytest -q -m slow
 
-lint: ## ruff, the rules and the format
+# shellcheck -x follows the `. lib.sh` in each script. terraform init fetches
+# the Linode provider the lock file pins, once, and validate needs it.
+lint: ## ruff, shellcheck, terraform fmt and terraform validate
 	uv run ruff check .
 	uv run ruff format --check .
+	shellcheck -x deploy/scripts/*.sh deploy/cloud-init/bootstrap.sh
+	terraform -chdir=deploy/terraform fmt -check -recursive
+	terraform -chdir=deploy/terraform init -input=false -backend=false -no-color >/dev/null
+	terraform -chdir=deploy/terraform validate -no-color

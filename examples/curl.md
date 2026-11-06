@@ -128,7 +128,12 @@ curl -s -w '\n' -H "Authorization: Bearer $CARD_API_KEY" \
   $G/v1/chat/completions
 ```
 
-On the node, the model is the `id` that `/v1/models` lists.
+On the node, the model is the `id` that `/v1/models` lists. The OpenAI SDK
+works the same way, with this stack's key as its `api_key`:
+
+```bash
+uv run examples/openai_sdk.py
+```
 
 What the GPUs are doing. In mock mode it invents one card and says
 `"backend": "mock"`:

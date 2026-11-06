@@ -79,7 +79,7 @@ wheels = [
 
 [[package]]
 name = "baseball-card"
-version = "0.5.0"
+version = "0.6.0"
 source = { virtual = "." }
 dependencies = [
     { name = "card-api" },
@@ -131,7 +131,7 @@ real-cpu = [{ name = "card-cutout", extras = ["real"], editable = "services/cuto
 
 [[package]]
 name = "card-api"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "services/api" }
 dependencies = [
     { name = "card-common" },
@@ -160,7 +160,7 @@ requires-dist = [
 
 [[package]]
 name = "card-art"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "services/art" }
 dependencies = [
     { name = "card-common" },
@@ -199,7 +199,7 @@ provides-extras = ["real"]
 
 [[package]]
 name = "card-cli"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "cli" }
 dependencies = [
     { name = "httpx" },
@@ -210,7 +210,7 @@ requires-dist = [{ name = "httpx", specifier = ">=0.27" }]
 
 [[package]]
 name = "card-common"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "packages/common" }
 dependencies = [
     { name = "fastapi" },
@@ -227,7 +227,7 @@ requires-dist = [
 
 [[package]]
 name = "card-comps"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "packages/comps" }
 dependencies = [
     { name = "card-common" },
@@ -242,7 +242,7 @@ requires-dist = [
 
 [[package]]
 name = "card-cutout"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "services/cutout" }
 dependencies = [
     { name = "card-common" },
@@ -286,7 +286,7 @@ provides-extras = ["real"]
 
 [[package]]
 name = "card-gpu-stats"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "services/gpu-stats" }
 dependencies = [
     { name = "card-common" },
@@ -303,7 +303,7 @@ requires-dist = [
 
 [[package]]
 name = "card-llm-mock"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "services/llm-mock" }
 dependencies = [
     { name = "card-common" },
@@ -320,7 +320,7 @@ requires-dist = [
 
 [[package]]
 name = "card-render"
-version = "0.5.0"
+version = "0.6.0"
 source = { editable = "packages/card" }
 dependencies = [
     { name = "numpy" },

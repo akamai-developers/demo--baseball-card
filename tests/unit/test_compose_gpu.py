@@ -259,14 +259,25 @@ def test_vllm_serves_the_pinned_checkpoint(config: dict) -> None:
 
 def test_vllm_gets_the_key_and_nothing_else_from_env(config: dict) -> None:
     """VLLM_API_KEY is CARD_API_KEY, as an environment variable and never a flag.
-    No env_file: vLLM is handed three names, not the whole .env."""
+    No env_file: vLLM is handed four names, not the whole .env."""
     llm = config["services"]["llm-gpu"]
-    assert sorted(llm["environment"]) == ["HF_HOME", "HF_TOKEN", "VLLM_API_KEY"]
+    assert sorted(llm["environment"]) == [
+        "HF_HOME",
+        "HF_TOKEN",
+        "VLLM_API_KEY",
+        "VLLM_NO_USAGE_STATS",
+    ]
     # What compose read: the shell's key, else the one in .env, else the stand-in.
     key = os.environ.get("CARD_API_KEY") or dotenv_value("CARD_API_KEY") or TEST_KEY
     confirm_key(llm["environment"]["VLLM_API_KEY"], key, "vLLM's VLLM_API_KEY")
     assert "--api-key" not in llm["command"]
     refute_key(" ".join(llm["command"]), key, "vLLM's command line")
+
+
+def test_vllm_sends_no_usage_report(config: dict) -> None:
+    """Without this vLLM reports the hardware, its settings and the model's
+    architecture to stats.vllm.ai. Nothing leaves the node."""
+    assert config["services"]["llm-gpu"]["environment"]["VLLM_NO_USAGE_STATS"] == "1"
 
 
 def test_compose_refuses_to_start_vllm_without_a_key(docker: list[str]) -> None:

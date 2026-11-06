@@ -32,7 +32,7 @@ This repo is being built, and this README says what works today.
 | BiRefNet, FLUX.2 [klein] and Gemma 4 in those services | built. Tested with the models stubbed. BiRefNet run for real on a CPU. FLUX and Gemma not yet run from this repo |
 | The two GPU layouts, one card and two | built. Two cards measured with these models and settings. One card sized on paper |
 | The browser app, with the camera and the face detector | built, tested in mock mode in Chromium |
-| The deploy to Akamai Cloud | not built yet |
+| The deploy to Akamai Cloud: Terraform, cloud-init, the scripts, `make gpu-check` | built. Run here against stand-ins for Terraform, SSH and the Linode API. `make gpu-check` run against the live API. Not yet run on a real node |
 
 ## models
 
@@ -195,6 +195,32 @@ takes 15 to 25 seconds. The ledger says `ZhengPeng7/BiRefNet` on `local-cpu`,
 and the back of the card says no GPU was used. `make up-mock` puts the matte
 back.
 
+## on Akamai Cloud
+
+Six commands, from your machine, with `LINODE_TOKEN` in your shell and
+`ALLOW_CLOUD_DEPLOY=1` in `.env`:
+
+```bash
+make gpu-check    # which regions can sell the plan right now. Reads, changes nothing
+make deploy       # the node, its firewall, the driver, the weights, the stack
+make tunnel       # localhost:8443 is the node while this runs
+make check        # the key is enforced, and the models hold their GPUs
+make smoke        # a card made on the node, checked to have run on its GPUs
+make destroy      # deletes everything tagged baseball-card
+```
+
+The node bills by the hour until `make destroy`: 0.67 USD with `GPU_COUNT=1`,
+1.05 with `GPU_COUNT=2`. In the default tunnel mode only SSH is open, from
+your address alone. [docs/DEPLOY.md](docs/DEPLOY.md) goes through each step,
+then calling vLLM yourself with curl and the OpenAI SDK, rotating the key, and
+domain mode, which puts the gateway on the internet with a Let's Encrypt
+certificate.
+
+None of this has run against a real node from this repo yet. The scripts ran
+here against stand-ins for Terraform, SSH and the Linode API. `make gpu-check`
+ran against the live API on 2026-11-06 at 22:28 UTC, when six regions could
+sell both plans. Earlier that day none could.
+
 ## the api
 
 `/livez` is the one route open without the key:
@@ -262,8 +288,11 @@ a GPU.
 
 One key guards every route but `/livez` and the app's own page and files,
 which is where the key is typed. Caddy is the only service with a port, and it
-binds `127.0.0.1`. [docs/SECURITY.md](docs/SECURITY.md) lists
-each claim with a command that checks it.
+binds `127.0.0.1`. On the node the firewall lets in SSH from your address and
+nothing else, and `make tunnel` is the way to the gateway. Nothing leaves the
+node: no photo, no stats, and not vLLM's usage report.
+[docs/SECURITY.md](docs/SECURITY.md) lists each claim with a command that
+checks it.
 
 ## layout
 
@@ -285,8 +314,11 @@ web/vendor.lock       the face detector's files, pinned by sha256
 cli/                  cardctl
 deploy/models.env     the model repos and their pinned commits
 deploy/layouts/       which card each model is on, for one GPU and for two
-docs/                 the architecture and the security claims
-examples/             the test player's numbers, and every route with curl
+deploy/terraform/     the instance and its firewall, and their tests
+deploy/cloud-init/    the driver, Docker and the hardened sshd, on first boot
+deploy/scripts/       gpu-check, deploy, tunnel, check, smoke, rotate-key, destroy
+docs/                 the architecture, the deploy and the security claims
+examples/             the test player's numbers, every route with curl, the OpenAI SDK
 tests/                unit, integration, security, and the test photo
 ```
 

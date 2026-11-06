@@ -1,6 +1,6 @@
 [project]
 name = "baseball-card"
-version = "0.5.0"
+version = "0.6.0"
 description = "A baseball card from a photo and a name, made by three open-weight models on one Akamai Cloud GPU node."
 requires-python = ">=3.12"
 dependencies = [

@@ -1,0 +1,85 @@
+#cloud-config
+# Rendered by deploy/terraform/main.tf and handed to the instance through the
+# Linode Metadata service. Everything that is more than three lines of shell
+# lives in bootstrap.sh, which arrives base64 encoded so no escaping is needed
+# in either direction: this file is a Terraform template, so a literal $${...}
+# here would be read as an interpolation.
+#
+# Boot 1: users, sshd config, bootstrap.sh, then reboot.
+# Boot 2: bootcmd sees the "installed" marker and writes "ready".
+# deploy.sh waits for "ready", then for the GPUs in nvidia-smi.
+
+hostname: ${hostname}
+manage_etc_hosts: true
+
+# Created before the users module runs, so ${deploy_user} can be put in it
+# before Docker's own postinst would have made it.
+groups:
+  - docker
+
+users:
+  - name: ${deploy_user}
+    shell: /bin/bash
+    # docker runs the stack. sudo is for reading the logs below when something
+    # goes wrong. Membership of docker is root on this box either way.
+    groups: [docker, sudo]
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: true
+    ssh_authorized_keys:
+      - "${ssh_public_key}"
+
+# No password for any account, root included.
+ssh_pwauth: false
+disable_root: true
+
+package_update: true
+# Left off on purpose. A full upgrade on first boot adds minutes to a cold start
+# and can pull in a kernel the driver then has to build against.
+package_upgrade: false
+
+write_files:
+  # sshd hardening. Ubuntu 24.04 reads this directory from the main config, and a
+  # drop-in is easier to audit than a patched sshd_config.
+  - path: /etc/ssh/sshd_config.d/10-baseball-card.conf
+    permissions: "0644"
+    owner: root:root
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PermitEmptyPasswords no
+      AuthenticationMethods publickey
+      X11Forwarding no
+      AllowAgentForwarding no
+      MaxAuthTries 3
+      ClientAliveInterval 60
+      ClientAliveCountMax 10
+
+  - path: /usr/local/sbin/baseball-card-bootstrap.sh
+    permissions: "0755"
+    owner: root:root
+    encoding: b64
+    content: ${base64encode(bootstrap_script)}
+
+# Runs on every boot, before runcmd and before the network is up. On boot 1 the
+# marker does not exist yet, so nothing happens. On boot 2 it does, and that is
+# the signal deploy.sh waits for.
+bootcmd:
+  - [
+      sh,
+      -c,
+      'test -f /var/lib/baseball-card/installed && date -Is >/var/lib/baseball-card/ready || true',
+    ]
+
+runcmd:
+  - [systemctl, restart, ssh]
+  - [/usr/local/sbin/baseball-card-bootstrap.sh, "${nvidia_driver_branch}", "${deploy_user}"]
+
+# The driver's kernel module has to displace nouveau, which is bound to the
+# cards from the first boot. Every other order of operations ends with an
+# nvidia-smi that reports no devices.
+power_state:
+  mode: reboot
+  condition: true
+  delay: now
+  message: NVIDIA driver installed, rebooting

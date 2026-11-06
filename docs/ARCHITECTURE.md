@@ -130,6 +130,37 @@ for it. The 16 GB of weights live in RAM, which is why the default plan has
 `tests/unit/test_compose_gpu.py` renders the gpu profile with each layout and
 checks which card each model is on, the label it reports, and these sums.
 
+## the deploy
+
+Terraform makes two resources, both tagged `baseball-card`: the instance, on
+the plan `GPU_COUNT` picks, and its firewall. Its state stays on the laptop in
+`deploy/terraform/terraform.tfstate`, gitignored. Everything else is done over
+SSH with the repo's own key.
+
+```
+laptop                                       node
+  make gpu-check  Linode API, read only
+  make deploy     terraform apply        ->  instance and firewall
+                  wait for ssh           <-  cloud-init: driver, Docker, reboot
+                  rsync                  ->  /opt/baseball-card, less what git ignores
+                  ssh, on stdin          ->  /opt/baseball-card/.env, mode 600
+                  ssh                    ->  pull-models.sh: 27 GB into hf-cache
+                  ssh                    ->  docker build, docker compose up -d
+  make tunnel     ssh -L 8443            ->  Caddy on 127.0.0.1:8443
+  make destroy    terraform destroy      ->  nothing tagged baseball-card left
+```
+
+The node's `.env` names the compose profile, `gpu`, and in domain mode the
+second compose file, so every `docker compose` on the node runs the stack as
+it was deployed. It also carries the GPU layout's six lines. `.env.example`
+lists every line.
+
+The weights come down before the services start, in vLLM's own container with
+`docker compose run`, so the image, the `hf-cache` volume and `HF_TOKEN` are
+the ones compose gives vLLM. FLUX's repo also holds its transformer a second
+time, as one 7.75 GB file, which diffusers never reads, so only the folders
+come down: 16.0 GB of the repo's 23.7.
+
 ## two profiles
 
 | | mock | gpu |
