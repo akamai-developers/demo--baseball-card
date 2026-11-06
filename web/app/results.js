@@ -196,11 +196,15 @@ function seconds(card) {
   return `${(((card.finishedAt || Date.now()) - card.startedAt) / 1000).toFixed(1)} s`;
 }
 
-/** What the line under the name says. */
+/** The front on show: the print-size PNG, or the preview until it comes. */
+const frontUrl = (card) => card.urls["front.png"] || card.urls["preview.jpg"];
+
+/** What the line under the name says. The front can land as either file
+ *  first, and once one is on show only the back is left. */
 function statusLine(card) {
   if (card.status === "queued") return "Queued on the node.";
   if (card.status === "running") {
-    return card.urls["preview.jpg"] ? `Writing the back, ${seconds(card)}.` : `Making it, ${seconds(card)}.`;
+    return frontUrl(card) ? `Writing the back, ${seconds(card)}.` : `Making it, ${seconds(card)}.`;
   }
   if (card.status === "done") return `Made in ${seconds(card)}.`;
   return `Failed after ${seconds(card)}.`;
@@ -227,7 +231,7 @@ export function renderResult() {
   motion.setText($("result-status"), statusLine(card));
   paintLedger($("result-ledger"), card);
 
-  const front = card.urls["front.png"] || card.urls["preview.jpg"];
+  const front = frontUrl(card);
   const back = card.urls["back.png"];
   const flip = $("card-flip");
   const had = !flip.hidden;

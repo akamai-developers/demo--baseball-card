@@ -4,6 +4,65 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The version is the
 one `packages/common` reports, and every `pyproject.toml` carries it.
 
+## [0.5.0] - 2026-11-06
+
+The real model services and the two GPU layouts. Built and tested here with the
+models stubbed, BiRefNet run for real on a CPU. Nothing in this release has
+run on a GPU from this repo yet.
+
+### Added
+
+- The cutout service's BiRefNet backend: `ZhengPeng7/BiRefNet` at a pinned
+  commit, fp16 on CUDA and fp32 on a CPU, its matte cleaned by
+  `card.matte.refine_matte` at the photo's own size.
+- The art service's FLUX.2 [klein] 4B backend: bf16, four steps with the
+  guidance off, a seeded generator per request, sizes snapped to 16 out loud,
+  and a warm-up painting at a card's size. `ART_CPU_OFFLOAD=1` keeps the
+  weights in RAM and copies each layer to the card as it runs.
+- The pool, in both profiles: `ART_POOL_SIZE` backgrounds per style painted
+  ahead on the `art-data` volume. A card that asks for its style's recipe
+  takes one at once, and the painter paints a replacement when the model has
+  been free for a second. A request that arrives mid-painting stops it at the
+  end of that step. `"fresh": true` paints with the seed asked for. The art
+  service's `/healthz` says how full the pool is.
+- The gpu profile: BiRefNet, FLUX.2 klein, vLLM `v0.29.0` with Gemma 4 12B
+  w4a16, and gpu-stats on `nvidia-smi`. `deploy/layouts/gpu1.env` and
+  `gpu2.env` say which card each model is on for `GPU_COUNT=1` and `2`, and
+  how much of its card vLLM takes. The compose defaults are the one-GPU
+  layout. The numbers behind both are in `docker-compose.yml` and
+  `docs/ARCHITECTURE.md`.
+- `services/vision-base.Dockerfile`: Python and torch 2.14.0, from the CUDA
+  12.6 index for the node or the CPU index for a laptop. The real cutout and
+  art images build on it and install everything else from `uv.lock`.
+- `make vision-base`, `make vision-base-cpu`, `make up-cpu-cutout`,
+  `make card-cpu-cutout` and `make test-slow`, which run BiRefNet on this
+  machine's CPU.
+- `docs/ARCHITECTURE.md`: the node, one card, the two layouts with their sums,
+  the two profiles and the images.
+- Tests: each real backend with its model stubbed, the pool's files, turns and
+  painter, the pool through Caddy, the gpu profile rendered with each layout
+  (the cards, the labels, the memory sums), the pins held to
+  `deploy/models.env`, the torch in the base held to the lock, and BiRefNet on
+  the test photo, marked slow.
+
+### Changed
+
+- vLLM's key comes from `CARD_API_KEY` in `.env` when compose starts, and
+  compose refuses to render without it, so every compose command needs
+  `make env` first.
+- The real BiRefNet on a laptop labels itself `local-cpu`.
+
+### Notes
+
+- The one-GPU layout is sized on paper. Gemma 4 12B's weights are 9,789 MiB,
+  and FLUX moved to the card a whole part at a time peaks at about 10,284 MiB,
+  so with BiRefNet they do not fit one 20 GB card that way. Layer by layer,
+  FLUX should stay under 3,000 MiB. Not measured.
+- The two-GPU numbers were measured in September and October 2026 with the
+  same models and settings, not by this repo.
+- The lock holds the versions that ran there: torch 2.14.0, transformers
+  4.57.6 for BiRefNet and 5.17.0 for FLUX's text encoder, diffusers 0.40.0.
+
 ## [0.4.0] - 2026-11-06
 
 The browser app, served by the api and tested in Chromium against the mock

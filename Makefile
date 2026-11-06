@@ -33,7 +33,12 @@ STATS ?= examples/stats.json
 STYLE ?=
 OUT ?= out
 
-.PHONY: help env up-mock down logs ps card-mock card card-fixture web-vendor test lint
+# The torch base images: CUDA for the node, CPU wheels for BiRefNet on a laptop.
+VISION_BASE := baseball-card-vision-base:local
+VISION_BASE_CPU := baseball-card-vision-base-cpu:local
+
+.PHONY: help env up-mock down logs ps card-mock card card-fixture up-cpu-cutout \
+	card-cpu-cutout web-vendor vision-base vision-base-cpu test test-slow lint
 
 # ---- On a laptop ----------------------------------------------------------
 # The mock stack: every service in Docker with stub models, behind Caddy on
@@ -42,7 +47,7 @@ OUT ?= out
 help: ## Show the targets
 	@awk 'BEGIN { FS = ":.*## " } \
 		/^# ---- / { t = $$0; sub(/^# ---- /, "", t); sub(/ -+$$/, "", t); printf "%s%s\n", (n++ ? "\n" : ""), t; next } \
-		/^[a-z][a-zA-Z0-9_-]*:.*## / { printf "  \033[1m%-12s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+		/^[a-z][a-zA-Z0-9_-]*:.*## / { printf "  \033[1m%-16s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
 env: ## Create .env from .env.example if it is missing, with a new CARD_API_KEY
 	@if [ ! -f .env ]; then cp .env.example .env; echo "created .env from .env.example"; fi
@@ -104,8 +109,23 @@ card-fixture: ## Render the test photo's card into out/. No stack, no models. ST
 	uv run playwright install chromium
 	uv run python -m card.render --fixture $(if $(STYLE),--style $(STYLE),)
 
+# BiRefNet is the one real model a laptop can run: 444 MB of weights. This is
+# the mock stack with the real cutout service in place of the matte, built on
+# the CPU torch image. The ledger says local-cpu.
+up-cpu-cutout: vision-base-cpu ## The mock stack with the real BiRefNet on this machine's CPU
+	@echo "BiRefNet on the CPU. The first run downloads 444 MB of weights into the hf-cache volume."
+	CUTOUT_DOCKERFILE=services/cutout/Dockerfile.real \
+	CUTOUT_BACKEND=real \
+	CUTOUT_GPU_LABEL=local-cpu \
+	CUTOUT_START_PERIOD=900s \
+	WAIT_S=900 $(MAKE) --no-print-directory up-mock
+
+card-cpu-cutout: up-cpu-cutout ## A card cut out by the real BiRefNet on the CPU, into out/. PHOTO=
+	@$(MAKE) --no-print-directory card PHOTO="$(or $(PHOTO),tests/fixtures/portrait.jpg)"
+
 # ---- Development ----------------------------------------------------------
-# For changing this repo: the face detector's files, the tests and the lint.
+# For changing this repo: the face detector's files, the torch base images, the
+# tests and the lint.
 
 # The page's face detector is not ours. web/vendor.lock pins each file by
 # sha256, and this puts them in web/vendor/ for an api run from the checkout.
@@ -113,9 +133,24 @@ card-fixture: ## Render the test photo's card into out/. No stack, no models. ST
 web-vendor: ## Download the face detector into web/vendor/, checked by sha256
 	uv run python web/vendor.py
 
+# The base the gpu profile's cutout and art images are built FROM. The node
+# builds it before compose does. 15 GB, most of it CUDA libraries.
+vision-base: ## Build the CUDA torch base image the node's model services use
+	$(DOCKER) build -f services/vision-base.Dockerfile -t $(VISION_BASE) .
+
+vision-base-cpu: ## Build the same base on CPU wheels, for up-cpu-cutout
+	$(DOCKER) build -f services/vision-base.Dockerfile -t $(VISION_BASE_CPU) \
+		--build-arg BASE_IMAGE=python:3.12-slim-bookworm \
+		--build-arg TORCH_INDEX=https://download.pytorch.org/whl/cpu .
+
 test: ## Run the tests. The integration tests skip until make up-mock
 	uv run playwright install chromium
 	uv run pytest -q -m "not slow"
+
+# torch and BiRefNet's other dependencies go into .venv the first time, about
+# 1 GB, and the weights into Hugging Face's cache in your home directory.
+test-slow: ## Run BiRefNet on this machine's CPU against the test photo
+	uv run --group real-cpu pytest -q -m slow
 
 lint: ## ruff, the rules and the format
 	uv run ruff check .

@@ -1,0 +1,40 @@
+# The BiRefNet backend. Build context is the repo root.
+#
+# Needs the shared base first, `make vision-base` on the node:
+#
+#   make vision-base
+#   docker build -f services/cutout/Dockerfile.real .
+#
+# `make up-cpu-cutout` builds it on the CPU base instead, with
+# VISION_BASE=baseball-card-vision-base-cpu:local. Everything below is the same
+# either way.
+#
+# No weights are baked in. They land in the hf-cache volume, so the image stays
+# small and the same image works for any revision the service pins.
+ARG VISION_BASE=baseball-card-vision-base:local
+FROM ${VISION_BASE}
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock /app/
+COPY packages/common /app/packages/common
+COPY packages/card /app/packages/card
+COPY services/cutout /app/services/cutout
+
+# The versions uv.lock holds for card-cutout[real], into the base's venv, with
+# two exceptions. torch and torchvision are the base's own: the lock's are the
+# CPU builds, and the GPU base has the CUDA ones. --inexact leaves what the
+# lock does not list, the CUDA libraries torch brought with it.
+RUN uv sync --frozen --no-dev --no-editable --inexact \
+    --package card-cutout --extra real \
+    --no-install-package torch --no-install-package torchvision
+
+# A named volume mounted on an empty image directory inherits that directory's
+# owner, which is how this container writes weights as a non-root user.
+RUN useradd --uid 10002 --create-home --shell /usr/sbin/nologin app \
+    && mkdir -p /hf-cache \
+    && chown app:app /hf-cache
+USER app
+
+EXPOSE 8001
+CMD ["uvicorn", "cutout.main:app", "--host", "0.0.0.0", "--port", "8001", "--no-access-log"]

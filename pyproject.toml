@@ -1,6 +1,6 @@
 [project]
 name = "baseball-card"
-version = "0.4.0"
+version = "0.5.0"
 description = "A baseball card from a photo and a name, made by three open-weight models on one Akamai Cloud GPU node."
 requires-python = ">=3.12"
 dependencies = [
@@ -26,11 +26,37 @@ dev = [
     # The compose tests read docker-compose.yml and its rendered config.
     "pyyaml>=6.0",
 ]
+# BiRefNet on this machine's CPU, for `make test-slow` and nothing else. Not a
+# default group: torch and its friends are about 1 GB, and every other test in
+# the suite runs without them.
+real-cpu = ["card-cutout[real]"]
 
 [tool.uv]
 package = false
 
+# The two real extras cannot share an environment, and they never have to: each
+# one is installed into its own image. BiRefNet's remote code is transformers
+# 4.x code, transformers 4.x requires huggingface-hub<1.0, and diffusers 0.40
+# (the first release with Flux2KleinPipeline in it) requires huggingface-hub
+# >=1.23. Saying so here lets one lock file hold both resolutions.
+conflicts = [
+    [
+        { package = "card-cutout", extra = "real" },
+        { package = "card-art", extra = "real" },
+    ],
+]
+
+# CPU wheels in the lock. The default PyPI torch carries the CUDA runtime, 2.5 GB
+# a laptop without an NVIDIA card can never use. The GPU images do not read
+# this: services/vision-base.Dockerfile installs torch from the CUDA index.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
 [tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
 card-common = { workspace = true }
 card-api = { workspace = true }
 card-render = { workspace = true }
@@ -73,4 +99,8 @@ filterwarnings = [
     # Starlette's TestClient asks for httpx2, a fork of httpx. The services use
     # httpx, and the TestClient still works with it.
     "ignore:Using `httpx` with `starlette.testclient` is deprecated:UserWarning",
+    # kornia 0.8.3, which BiRefNet's own code imports, calls torch.jit.script
+    # when it is imported, and torch 2.14 warns that it is deprecated. Only the
+    # slow test imports it.
+    "ignore:`torch.jit.script` is deprecated:FutureWarning",
 ]

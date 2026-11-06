@@ -113,22 +113,30 @@ def make_app(
     *,
     open_paths: frozenset[str] = frozenset({"/livez"}),
     on_start: Callable[[], object] | None = None,
+    on_stop: Callable[[], object] | None = None,
 ) -> FastAPI:
     """A FastAPI app with the key gate, the access log, and /livez. No docs page.
 
     `on_start` is awaited during startup if it returns an awaitable, so a
-    service can load its model there.
+    service can load its model there. `on_stop` is the same on the way down, so
+    a service can stop what it started: the art service's painter.
     """
+
+    async def call(hook: Callable[[], object] | None) -> None:
+        if hook is not None:
+            result = hook()
+            if asyncio.iscoroutine(result):
+                await result
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         setup_logging(settings.log_level)
         assert_key_is_usable(settings.card_api_key, settings.backend, settings.service_name)
-        if on_start is not None:
-            result = on_start()
-            if asyncio.iscoroutine(result):
-                await result
-        yield
+        await call(on_start)
+        try:
+            yield
+        finally:
+            await call(on_stop)
 
     app = FastAPI(
         title=title,

@@ -237,9 +237,10 @@ def test_a_card_from_the_test_photo(
     assert steps == ["cutout", "art", "comps", "text", "compose", "render"]
     assert all(row.get_attribute("data-status") == "done" for row in rows.all())
     assert page.inner_text('#result-ledger tr[data-step="cutout"] .lg-model') == "plain-wall-matte"
-    assert (
-        page.inner_text('#result-ledger tr[data-step="art"] .lg-model')
-        == "procedural-stadium · fresh"
+    # From the art service's pool, or painted for this card when none was ready.
+    assert re.fullmatch(
+        r"procedural-stadium · (pool|fresh)",
+        page.inner_text('#result-ledger tr[data-step="art"] .lg-model'),
     )
     assert page.inner_text('#result-ledger tr[data-step="text"] .lg-where') == "mock-gpu0"
     assert re.fullmatch(r"\d+ ms", page.inner_text('#result-ledger tr[data-step="render"] .lg-ms'))

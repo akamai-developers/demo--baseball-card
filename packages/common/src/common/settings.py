@@ -36,7 +36,8 @@ class Settings(BaseSettings):
     backend: Backend = "mock"
     device: Device = "cpu"
     # Copied into the X-Ran-On header and into the ledger on the back of the
-    # card: akamai-gpu0, akamai-gpu1, akamai-cpu, or a mock- label on a laptop.
+    # card: akamai-gpu0, akamai-gpu1 or akamai-cpu on the node, local-cpu for
+    # the real BiRefNet on a laptop, or a mock- label.
     gpu_label: str = "mock"
 
     # Where a service keeps its files. The api: the database, the uploads and
@@ -64,9 +65,9 @@ class Settings(BaseSettings):
     step_timeout_s: int = Field(default=180, ge=1)
     art_timeout_s: int = Field(default=120, ge=1)
 
-    # FLUX.2 klein takes about 18 GB of a card on its own. The one-GPU layout
-    # turns this on: the weights stay in host memory and each part of the model
-    # moves to the card as it runs, which costs seconds per image.
+    # FLUX.2 klein takes 17,956 MiB of a card on its own. The one-GPU layout
+    # turns this on: the weights stay in host memory and each layer is copied
+    # to the card as it runs, which makes every painting slower.
     art_cpu_offload: bool = False
 
     # How many finished backgrounds per style the art service keeps on disk,

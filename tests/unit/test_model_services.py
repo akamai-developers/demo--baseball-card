@@ -135,7 +135,7 @@ def test_art_returns_a_png_at_the_size_it_was_asked_for(art: TestClient) -> None
     assert response.headers[MODEL] == "mock/procedural-stadium"
     assert response.headers[LICENSE] == "n/a"
     assert response.headers[RAN_ON] == "mock"
-    # Painted for this request: the mock keeps no pool.
+    # Painted for this request: clean_settings turns the pool off.
     assert response.headers[ART_SOURCE] == "fresh"
 
 

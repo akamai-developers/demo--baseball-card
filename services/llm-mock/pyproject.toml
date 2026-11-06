@@ -1,6 +1,6 @@
 [project]
 name = "card-llm-mock"
-version = "0.4.0"
+version = "0.5.0"
 description = "Stands in for vLLM on a laptop. Same routes, same bearer key, no weights."
 requires-python = ">=3.12"
 dependencies = [

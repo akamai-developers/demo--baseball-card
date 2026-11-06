@@ -43,6 +43,16 @@ reach the api's gate instead.
 curl -s -o /dev/null -w '%{http_code}\n' $GATEWAY/metrics    # 401
 ```
 
+**vLLM gets the key as an environment variable, and cannot start without
+one.** Compose hands vLLM `VLLM_API_KEY` from `CARD_API_KEY` in `.env`, and
+refuses to render at all when that is empty, so vLLM never serves `/v1` open.
+There is no `--api-key` flag, where the key would show in `ps`. vLLM is not
+handed `.env`: its environment is the key, the cache path and `HF_TOKEN`.
+
+```bash
+uv run pytest tests/unit/test_compose_gpu.py -q -k "vllm"
+```
+
 **A wrong key cannot be timed, and a short one cannot start.** The compare
 takes the same time for any key. With `BACKEND=real` a service refuses a key
 under 32 characters. `make env` makes one with `openssl rand -hex 32`.
@@ -102,6 +112,39 @@ uv run pytest tests/security/test_domain_mode.py -q
 ```bash
 grep -n 'max_size' Caddyfile
 ```
+
+## the models
+
+**Every model is pinned to a commit.** `deploy/models.env` names each repo and
+the 40-character commit the node downloads. BiRefNet matters most: it is loaded
+with `trust_remote_code=True`, which runs the `birefnet.py` in its repo, so its
+pin decides which Python runs. The cutout and art services hold the same pins
+as constants and compose holds vLLM's, and a test holds all three to the file.
+
+```bash
+uv run pytest tests/unit/test_deploy_models.py -q
+```
+
+**No weights and no token are in an image.** The weights go into the
+`hf-cache` volume when a service first loads them. `HF_TOKEN` is only for a
+gated repo, and none of the pinned three is. It reaches a container as an
+environment variable, never a build argument, so it is in no image layer.
+
+```bash
+grep -n 'HF_TOKEN' services/*/Dockerfile* services/vision-base.Dockerfile   # nothing
+```
+
+**Our images run as a user of their own.** The api, the model services and
+gpu-stats each run as a numbered user with no shell, in the mock images and
+the real ones. vLLM and Caddy run their published images as they come.
+
+```bash
+grep -n '^USER' services/*/Dockerfile*
+```
+
+**vLLM shares no memory with the host.** Its API server and engine pass data
+through shared memory, a 2 GB `/dev/shm` of the container's own, not the
+host's IPC namespace.
 
 ## the data
 
@@ -216,8 +259,9 @@ These are the design. Each moves up to a claim with a command when it is built.
 ## not covered
 
 - One key for everyone. No accounts, scopes, expiry or audit log.
-- Every container reads the whole `.env`. On a laptop that is the key, the
-  deploy settings and `HF_TOKEN` when one is set.
+- Every container but vLLM reads the whole `.env`. On a laptop that is the
+  key, the deploy settings and `HF_TOKEN` when one is set.
+- vLLM's published image runs as root inside its container.
 - Anything that runs in the page can read the key from `sessionStorage`, a
   browser extension included.
 

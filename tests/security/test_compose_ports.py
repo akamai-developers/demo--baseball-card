@@ -6,30 +6,18 @@ compose file, not the source, so an override cannot quietly open something.
 from __future__ import annotations
 
 import json
-import os
 import re
-import subprocess
 
 import pytest
 import yaml
 
-from tests.conftest import REPO_ROOT, dotenv_value, refute_key
+from tests.conftest import REPO_ROOT, compose_config, dotenv_value, refute_key
 
 GATEWAY_SERVICE = "caddy"
 
 
 def rendered(docker: list[str], profile: str, env: dict[str, str] | None = None) -> dict:
-    result = subprocess.run(
-        [*docker, "compose", "--profile", profile, "config", "--format", "json"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        env={**os.environ, **(env or {})},
-        timeout=60,
-    )
-    if result.returncode != 0:
-        pytest.fail(f"docker compose config failed:\n{result.stderr}")
-    return json.loads(result.stdout)
+    return compose_config(docker, (profile,), env)
 
 
 @pytest.mark.parametrize("profile", ["mock", "gpu"])

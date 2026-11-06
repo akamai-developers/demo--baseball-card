@@ -1,6 +1,6 @@
 # Profiles:
 #   mock  a laptop. Stub models, no GPU, no weights to download.
-#   gpu   the Akamai Cloud node. Real models.
+#   gpu   the Akamai Cloud node. Real models, on one card or two.
 #
 # Caddy is the only service that publishes a port, on 127.0.0.1. Everything
 # else is reachable only on the internal network. tests/security/ holds that.
@@ -14,12 +14,14 @@
 # The mock stack stands in for the default one-GPU node, so every mock labels
 # itself mock-gpu0, the card the real model would be on. No GPU is used on a
 # laptop, and the back of the card says so.
+#
+# Compose reads CARD_API_KEY from .env when it starts, for vLLM's key, so every
+# compose command needs it there. `make env` writes it.
 
 name: baseball-card
 
 x-env: &env
-  # Settings for every container. .env is made by `make env` and holds the
-  # key. required: false lets `docker compose config` run in a fresh clone.
+  # Settings for every container. .env is made by `make env` and holds the key.
   env_file:
     - path: .env
       required: false
@@ -29,6 +31,11 @@ x-mock-service: &mock-service
   profiles: ["mock"]
   restart: unless-stopped
   networks: [card]
+
+x-gpu-service: &gpu-service
+  <<: *env
+  profiles: ["gpu"]
+  restart: unless-stopped
 
 services:
   caddy:
@@ -68,7 +75,8 @@ services:
       ART_URL: http://art:8002
       LLM_URL: http://llm:8000
       # vLLM reports none of this about itself, so the api is told. The node's
-      # .env overrides all three.
+      # .env overrides all three: the model pins from deploy/models.env, and
+      # LLM_RAN_ON from the GPU layout.
       LLM_MODEL: ${LLM_MODEL:-mock/wordlist}
       LLM_LICENSE: ${LLM_LICENSE:-n/a}
       LLM_RAN_ON: ${LLM_RAN_ON:-mock-gpu0}
@@ -82,25 +90,36 @@ services:
       start_period: 5s
     networks: [card]
 
-  # The plain-wall matte in place of BiRefNet.
+  # The plain-wall matte in place of BiRefNet. `make up-cpu-cutout` points the
+  # CUTOUT_ variables at the real image and runs BiRefNet on this machine's CPU,
+  # the one real model a laptop can run.
   cutout:
     <<: *mock-service
     build:
       context: .
-      dockerfile: services/cutout/Dockerfile
+      dockerfile: ${CUTOUT_DOCKERFILE:-services/cutout/Dockerfile}
+      args:
+        # Read by services/cutout/Dockerfile.real only.
+        VISION_BASE: baseball-card-vision-base-cpu:local
     environment:
       SERVICE_NAME: cutout
-      BACKEND: mock
+      BACKEND: ${CUTOUT_BACKEND:-mock}
       DEVICE: cpu
-      GPU_LABEL: mock-gpu0
+      GPU_LABEL: ${CUTOUT_GPU_LABEL:-mock-gpu0}
+    volumes:
+      # BiRefNet's weights, when the real backend runs here.
+      - hf-cache:/hf-cache
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8001/livez', timeout=3)"]
       interval: 5s
       timeout: 5s
-      retries: 12
-      start_period: 3s
+      retries: 24
+      # The real backend answers nothing until its weights are loaded and the
+      # warm-up has run, because that happens before uvicorn serves. On a CPU
+      # that is about half a minute, and the first run downloads 444 MB.
+      start_period: ${CUTOUT_START_PERIOD:-3s}
 
-  # A drawn ballpark in place of FLUX.2 klein.
+  # A drawn ballpark in place of FLUX.2 klein, with the same pool in front.
   art:
     <<: *mock-service
     build:
@@ -111,6 +130,9 @@ services:
       BACKEND: mock
       DEVICE: cpu
       GPU_LABEL: mock-gpu0
+    volumes:
+      # The pool: backgrounds painted ahead of the cards that will want them.
+      - art-data:/data
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8002/livez', timeout=3)"]
       interval: 5s
@@ -154,12 +176,216 @@ services:
       retries: 12
       start_period: 3s
 
+  # ---- the gpu profile ------------------------------------------------------
+  # One definition per model service, aliased back to the plain name. Which
+  # card each model is on comes from the GPU layout: deploy/layouts/gpu1.env or
+  # gpu2.env, which deploy.sh copies into the node's .env from GPU_COUNT. The
+  # defaults below are gpu1.env, so a node .env without those lines runs the
+  # one-GPU layout. tests/unit/test_compose_gpu.py renders both.
+  #
+  # An RTX 4000 Ada has 20,475 MiB. Each container sees only the card it was
+  # given, as its device 0.
+  #
+  # GPU_COUNT=2, measured with these models and settings on a
+  # g2-gpu-rtx4000a2-s node, nvidia-smi per process:
+  #   card 0  FLUX.2 klein alone. 17,956 MiB painting backgrounds, September
+  #           2026.
+  #   card 1  On 2026-10-30. vLLM at --gpu-memory-utilization 0.80: 16,982
+  #           MiB, which is 0.80 of the card, 16,380, plus 602 of CUDA graphs
+  #           and context. BiRefNet 2,012 MiB. 1,466 MiB spare.
+  #
+  # GPU_COUNT=1, sized on paper, not yet measured:
+  #   vLLM at 0.65   0.65 of the card is 13,309 MiB, plus about 602 as at
+  #                  0.80: 13,911. Gemma 4 12B's weights are 9,789 of it. 40 of
+  #                  its 48 layers attend over a 1,024-token window, so the KV
+  #                  cache left over holds the 8,192-token context with room
+  #                  to spare.
+  #   BiRefNet       2,012 MiB, as on card 1 above.
+  #   FLUX.2 klein   ART_CPU_OFFLOAD=1. Its 16 GB of weights stay in the node's
+  #                  32 GB of RAM and each layer is copied to the card as it
+  #                  runs: under 3,000 MiB on the card, and every painting is
+  #                  slower. The pool keeps backgrounds painted ahead, so a card
+  #                  rarely waits for one.
+  #   total          about 18,900 MiB, 1,550 spare.
+  # Why FLUX goes layer by layer: moved across one part at a time instead, it
+  # peaks at about 10,284 MiB, the 17,956 measured less the text encoder's
+  # 7,672, which is off the card while the transformer runs. With BiRefNet that
+  # leaves vLLM 8,179 MiB, less than Gemma's weights alone.
+
+  cutout-gpu:
+    <<: *gpu-service
+    build:
+      context: .
+      dockerfile: services/cutout/Dockerfile.real
+    environment:
+      SERVICE_NAME: cutout
+      BACKEND: real
+      DEVICE: cuda
+      GPU_LABEL: akamai-gpu${CUTOUT_GPU:-0}
+      # A card shared with vLLM, and on one GPU with FLUX too. Fragmentation is
+      # what makes a tight fit not fit.
+      PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+    volumes:
+      - hf-cache:/hf-cache
+    networks:
+      card:
+        aliases: ["cutout"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${CUTOUT_GPU:-0}"]
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8001/livez', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      # Weights off the volume, onto the card, plus one warm-up.
+      start_period: 300s
+
+  art-gpu:
+    <<: *gpu-service
+    build:
+      context: .
+      dockerfile: services/art/Dockerfile.real
+    environment:
+      SERVICE_NAME: art
+      BACKEND: real
+      DEVICE: cuda
+      GPU_LABEL: akamai-gpu${ART_GPU:-0}
+      ART_CPU_OFFLOAD: ${ART_CPU_OFFLOAD:-1}
+      PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+    volumes:
+      - hf-cache:/hf-cache
+      # The pool. ART_POOL_SIZE backgrounds per style, painted while the model
+      # has nothing else to do, so a card takes one instead of waiting.
+      - art-data:/data
+    networks:
+      card:
+        aliases: ["art"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${ART_GPU:-0}"]
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8002/livez', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      # 16 GB off the volume, plus one warm-up painting at a card's size.
+      start_period: 900s
+
+  # Gemma 4 12B on the stock vLLM image. Nothing of ours runs in here: it is
+  # the OpenAI-compatible API developers already know, and examples/ shows the
+  # OpenAI SDK pointed straight at it. No env_file: vLLM needs its key, the
+  # cache and an optional token, and nothing else in .env.
+  llm-gpu:
+    profiles: ["gpu"]
+    image: vllm/vllm-openai:v0.29.0
+    restart: unless-stopped
+    environment:
+      # vLLM checks this itself on every path that starts with /v1. It is the
+      # same CARD_API_KEY the other services enforce, so there is one key for
+      # the whole stack. An environment variable, never a flag, where it would
+      # show in `ps`. Compose refuses to start anything without it, so vLLM
+      # never comes up open.
+      VLLM_API_KEY: ${CARD_API_KEY:?CARD_API_KEY is empty. Run make env}
+      HF_HOME: /hf-cache
+      # Only for a gated model repo. The pinned one is not.
+      HF_TOKEN: ${HF_TOKEN:-}
+    # LLM_MODEL is the one name the api and vLLM must agree on: the api puts it
+    # in every request, and vLLM answers 404 to a name it does not serve. The
+    # node's .env sets it and LLM_REVISION from deploy/models.env. Change one and
+    # change the other, or the download asks the new repo for the old commit.
+    command:
+      - --model
+      - ${LLM_MODEL:-google/gemma-4-12B-it-qat-w4a16-ct}
+      - --served-model-name
+      - ${LLM_MODEL:-google/gemma-4-12B-it-qat-w4a16-ct}
+      - --revision
+      - ${LLM_REVISION:-1d2c2d7f2466070e69d6fb3fd5ce9a7d75f2f6ee}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --max-model-len
+      - "8192"
+      # The fraction of its card vLLM takes, weights, KV cache and all, from
+      # the layout.
+      # It checks at start that this much is free.
+      - --gpu-memory-utilization
+      - "${LLM_GPU_MEMORY:-0.65}"
+    volumes:
+      - hf-cache:/hf-cache
+    # The API server and the engine are two processes that pass data through
+    # shared memory. Docker gives a container 64 MB of it.
+    shm_size: 2gb
+    networks:
+      card:
+        aliases: ["llm"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["${LLM_GPU:-0}"]
+              capabilities: [gpu]
+    healthcheck:
+      # /health is open: vLLM's key check only guards /v1, which is also why the
+      # Caddyfile routes neither /health nor /metrics. It answers 200 once the
+      # engine is up and the model is served.
+      test: ["CMD", "python3", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/health', timeout=5)"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      # 9.6 GiB off the volume, onto the card, plus CUDA graph capture.
+      start_period: 900s
+
+  # nvidia-smi for the node panel and `make check`. It sees every card and
+  # holds none: `utility` is the capability that makes the NVIDIA container
+  # toolkit put the driver's nvidia-smi in the container, and that is all it
+  # needs.
+  gpu-stats-gpu:
+    <<: *gpu-service
+    build:
+      context: .
+      dockerfile: services/gpu-stats/Dockerfile
+    environment:
+      SERVICE_NAME: gpu-stats
+      BACKEND: real
+      DEVICE: cpu
+    networks:
+      card:
+        aliases: ["gpu-stats"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, utility]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8003/livez', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
 volumes:
   # SQLite, the photos and the cards.
   card-data:
   # Caddy's certificate in domain mode.
   caddy-data:
   caddy-config:
+  # The art service's pool of painted backgrounds. Stadiums, nothing personal.
+  art-data:
+  # Model weights, downloaded once and kept across `docker compose down`.
+  hf-cache:
 
 networks:
   card:

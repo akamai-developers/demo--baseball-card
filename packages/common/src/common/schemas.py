@@ -88,8 +88,8 @@ class Step(BaseModel):
     status: StepStatus = "queued"
     model: str | None = None
     license: str | None = None
-    # akamai-gpu0, akamai-gpu1, akamai-cpu, or a mock- label on a laptop.
-    # Reported by the service itself.
+    # akamai-gpu0, akamai-gpu1 or akamai-cpu on the node, local-cpu for the
+    # real BiRefNet on a laptop, or a mock- label. Reported by the service itself.
     ran_on: str | None = None
     ms: int | None = None
     error: str | None = None

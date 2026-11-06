@@ -1,0 +1,41 @@
+# The FLUX.2 [klein] backend. Build context is the repo root.
+#
+# Needs the shared base first, `make vision-base` on the node:
+#
+#   make vision-base
+#   docker build -f services/art/Dockerfile.real .
+#
+# There is no CPU variant to run. Four steps of a 4B model on a laptop's CPU is
+# minutes per image and 16 GB of weights, so `make up-mock` draws the
+# background instead.
+#
+# No weights are baked in. They land in the hf-cache volume, shared with the
+# cutout service.
+ARG VISION_BASE=baseball-card-vision-base:local
+FROM ${VISION_BASE}
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock /app/
+COPY packages/common /app/packages/common
+COPY packages/card /app/packages/card
+COPY services/art /app/services/art
+
+# The versions uv.lock holds for card-art[real], into the base's venv, except
+# torch, which is the base's own: the lock's is the CPU build, and the GPU base
+# has the CUDA one. --inexact leaves what the lock does not list, the CUDA
+# libraries torch brought with it, and torchvision.
+RUN uv sync --frozen --no-dev --no-editable --inexact \
+    --package card-art --extra real \
+    --no-install-package torch
+
+# A named volume mounted on an empty image directory inherits that directory's
+# owner, which is how this container writes weights, and the pool of painted
+# backgrounds in /data, as a non-root user.
+RUN useradd --uid 10003 --create-home --shell /usr/sbin/nologin app \
+    && mkdir -p /hf-cache /data \
+    && chown app:app /hf-cache /data
+USER app
+
+EXPOSE 8002
+CMD ["uvicorn", "art.main:app", "--host", "0.0.0.0", "--port", "8002", "--no-access-log"]

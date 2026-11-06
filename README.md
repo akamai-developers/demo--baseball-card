@@ -29,19 +29,38 @@ This repo is being built, and this README says what works today.
 | The card, front and back, in two styles | built, drawn on a laptop with stand-ins for the models |
 | The pipeline, the comps, the photo checks, `cardctl` | built, tested in mock mode |
 | The cutout, art, gpu-stats and vLLM services, with stand-ins for the models | built, tested in mock mode |
-| BiRefNet, FLUX.2 [klein] and Gemma 4 in those services | not built yet |
+| BiRefNet, FLUX.2 [klein] and Gemma 4 in those services | built. Tested with the models stubbed. BiRefNet run for real on a CPU. FLUX and Gemma not yet run from this repo |
+| The two GPU layouts, one card and two | built. Two cards measured with these models and settings. One card sized on paper |
 | The browser app, with the camera and the face detector | built, tested in mock mode in Chromium |
 | The deploy to Akamai Cloud | not built yet |
 
 ## models
 
-| Step | Model | Licence |
-|---|---|---|
-| cutout | [`ZhengPeng7/BiRefNet`](https://huggingface.co/ZhengPeng7/BiRefNet) | MIT |
-| art | [`black-forest-labs/FLUX.2-klein-4B`](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B) | Apache 2.0 |
-| text | [`google/gemma-4-12B-it-qat-w4a16-ct`](https://huggingface.co/google/gemma-4-12B-it-qat-w4a16-ct) on vLLM | Apache 2.0 |
+| Step | Model | Licence | VRAM | `GPU_COUNT=1` | `GPU_COUNT=2` |
+|---|---|---|---|---|---|
+| cutout | [`ZhengPeng7/BiRefNet`](https://huggingface.co/ZhengPeng7/BiRefNet) | MIT | 2,012 MiB | card 0 | card 1 |
+| art | [`black-forest-labs/FLUX.2-klein-4B`](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B) | Apache 2.0 | 17,956 MiB on a card of its own | card 0, weights in RAM | card 0, alone |
+| text | [`google/gemma-4-12B-it-qat-w4a16-ct`](https://huggingface.co/google/gemma-4-12B-it-qat-w4a16-ct) on vLLM | Apache 2.0 | 16,982 MiB at 0.80 of a card | card 0, 0.65 of it | card 1, 0.80 of it |
+| comps | nearest neighbour in numpy, over 225 Statcast hitters | n/a | none | CPU | CPU |
 
-`deploy/models.env` pins each one to a commit.
+`deploy/models.env` pins each one to a commit. Both layouts serve the same
+three models.
+
+The VRAM column is `nvidia-smi` per process on a `g2-gpu-rtx4000a2-s` node
+running these models with the two-card settings: FLUX in September 2026, the
+other two on 2026-10-30. This repo has not run on a GPU yet. The one-card layout has not run anywhere: it is sized on
+paper. There, FLUX keeps its 16 GB of weights in the node's RAM and copies each
+layer to the card as it paints, under 3,000 MiB of the card at a time, and
+slower by an amount not measured yet. Gemma 4 12B and BiRefNet take the rest.
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) has the sums.
+
+| `GPU_COUNT` | Plan | GPUs | RAM | USD an hour |
+|---|---|---|---|---|
+| 1, the default | `g2-gpu-rtx4000a1-m` | 1x RTX 4000 Ada, 20 GB | 32 GB | 0.67 |
+| 2 | `g2-gpu-rtx4000a2-s` | 2x RTX 4000 Ada, 20 GB | 32 GB | 1.05 |
+
+Prices from the Linode API on 2026-11-06. A node bills by the hour until it is
+deleted.
 
 ## quick start
 
@@ -66,21 +85,21 @@ that it takes seconds.
 to the stack, waits for the card, and prints the ledger:
 
 ```
-step     model                            licence  ran on     ms   status
--------  -------------------------------  -------  ---------  ---  ------
-cutout   mock/plain-wall-matte            n/a      mock-gpu0  221  done
-art      mock/procedural-stadium · fresh  n/a      mock-gpu0  196  done
-comps    nearest neighbour                n/a      mock       12   done
-text     mock/wordlist                    n/a      mock-gpu0  15   done
-compose  -                                -        mock       164  done
-render   -                                -        mock       427  done
+step     model                           licence  ran on     ms   status
+-------  ------------------------------  -------  ---------  ---  ------
+cutout   mock/plain-wall-matte           n/a      mock-gpu0  271  done
+art      mock/procedural-stadium · pool  n/a      mock-gpu0  68   done
+comps    nearest neighbour               n/a      mock       13   done
+text     mock/wordlist                   n/a      mock-gpu0  25   done
+compose  -                               -        mock       185  done
+render   -                               -        mock       993  done
 
 out/card-front.png
 out/card-back.png
 out/card-preview.jpg
 out/card.json
 
-2.1s total
+2.2s total
 ```
 
 That was on the 16-core box this repo was built on. Every model here is a
@@ -88,6 +107,12 @@ stand-in, and each one says so in the model column: `mock/plain-wall-matte` is
 a colour threshold, `mock/procedural-stadium` draws a ballpark with numpy, and
 `mock/wordlist` picks words from lists. The comps are real: the three 2025
 hitters whose Statcast numbers sit nearest yours.
+
+`pool` on the art row means the art service painted that background before the
+card asked. It keeps three per style painted ahead, `ART_POOL_SIZE`, and paints
+another when the model is free. On the node that is what keeps a card from
+waiting for FLUX. A card that finds none ready gets one painted for it, and the
+row says `fresh`.
 
 ## the app
 
@@ -153,6 +178,22 @@ its range is refused with a sentence that says the range.
 Cutout, art, comps and text run at the same time. Then the cutout goes onto the
 art, and Chromium draws both sides. The front is written first, so a caller
 polling `GET /cards/{id}` can show it while the back is still drawing.
+
+## BiRefNet on your CPU
+
+BiRefNet is the one real model a laptop can run. This builds the cutout service
+on CPU torch, puts it in the mock stack in place of the matte, and makes a card:
+
+```bash
+make card-cpu-cutout                  # the test photo
+make card-cpu-cutout PHOTO=me.jpg     # yours, on any background
+```
+
+The first run builds a 1.8 GB torch image and downloads 444 MB of weights into
+the `hf-cache` volume. On the 16-core box this repo was built on, a photo then
+takes 15 to 25 seconds. The ledger says `ZhengPeng7/BiRefNet` on `local-cpu`,
+and the back of the card says no GPU was used. `make up-mock` puts the matte
+back.
 
 ## the api
 
@@ -234,14 +275,17 @@ packages/common/      settings, the key check, schemas
 packages/card/        the face rule, the compositor, the templates, the renderer
 packages/comps/       the Statcast hitters and the nearest-neighbour lookup
 services/api/         the orchestrator: routes, pipeline, text, photo checks
-services/cutout/      the person out of the photo
-services/art/         the stadium behind them
+services/cutout/      the person out of the photo: BiRefNet, or the matte
+services/art/         the stadium behind them: FLUX.2 klein, or a drawing
 services/gpu-stats/   nvidia-smi as JSON
 services/llm-mock/    vLLM's routes without vLLM
+services/vision-base.Dockerfile   torch, under the real cutout and art images
 web/app/              the browser app: the page, its scripts, its font and logo
 web/vendor.lock       the face detector's files, pinned by sha256
 cli/                  cardctl
 deploy/models.env     the model repos and their pinned commits
+deploy/layouts/       which card each model is on, for one GPU and for two
+docs/                 the architecture and the security claims
 examples/             the test player's numbers, and every route with curl
 tests/                unit, integration, security, and the test photo
 ```

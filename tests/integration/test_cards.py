@@ -127,7 +127,9 @@ def test_the_model_steps_name_a_model_a_licence_and_where_they_ran(
         assert step["license"], name
         assert step["ran_on"] == label, name
         assert isinstance(step["ms"], int), name
-    assert steps["art"]["source"] == "fresh"
+    # Taken from the art service's pool, or painted for this card when the pool
+    # had none ready. tests/integration/test_art_pool.py holds which, and when.
+    assert steps["art"]["source"] in ("pool", "fresh")
 
 
 def test_the_mock_stack_does_not_claim_the_real_models_made_it(made: dict, mock_backends) -> None:

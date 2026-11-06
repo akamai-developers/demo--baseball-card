@@ -19,7 +19,7 @@ import subprocess
 import pytest
 import yaml
 
-from tests.conftest import REPO_ROOT
+from tests.conftest import REPO_ROOT, TEST_KEY, compose_config
 
 
 class ComposeLoader(yaml.SafeLoader):
@@ -122,29 +122,9 @@ def test_the_site_address_defaults_to_the_tunnel_port() -> None:
 
 
 def domain_config(docker: list[str]) -> dict:
-    result = subprocess.run(
-        [
-            *docker,
-            "compose",
-            "-f",
-            "docker-compose.yml",
-            "-f",
-            OVERRIDE,
-            "--profile",
-            "gpu",
-            "config",
-            "--format",
-            "json",
-        ],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        env={**os.environ, "DOMAIN": DOMAIN},
-        timeout=60,
+    return compose_config(
+        docker, ("gpu",), {"DOMAIN": DOMAIN}, files=("docker-compose.yml", OVERRIDE)
     )
-    if result.returncode != 0:
-        pytest.fail(f"docker compose config failed:\n{result.stderr}")
-    return json.loads(result.stdout)
 
 
 def test_domain_mode_publishes_80_and_443_and_nothing_else(docker: list[str]) -> None:
@@ -167,10 +147,12 @@ def test_domain_mode_refuses_to_render_without_a_domain(docker: list[str]) -> No
     """An empty DOMAIN here would open 80 and 443 while Caddy served :8443.
 
     --env-file /dev/null so the repo's own .env cannot supply a DOMAIN and turn
-    this into a test of whoever ran it last. Unset has to mean unset.
+    this into a test of whoever ran it last. Unset has to mean unset. It cannot
+    supply the key vLLM needs either, so a stand-in goes in the environment.
     """
     env = dict(os.environ)
     env.pop("DOMAIN", None)
+    env["CARD_API_KEY"] = TEST_KEY
     result = subprocess.run(
         [
             *docker,

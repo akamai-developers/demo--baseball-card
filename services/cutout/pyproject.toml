@@ -1,6 +1,6 @@
 [project]
 name = "card-cutout"
-version = "0.4.0"
+version = "0.5.0"
 description = "Cuts the person out of the photo. BiRefNet in real mode, a matte in mock mode."
 requires-python = ">=3.12"
 dependencies = [
@@ -11,6 +11,27 @@ dependencies = [
     "python-multipart>=0.0.12",
     "pillow>=11.0",
     "numpy>=2.0",
+]
+
+# The BiRefNet backend. Not installed in the mock image, which has no torch in
+# it at all. services/vision-base.Dockerfile installs torch and torchvision from
+# the right wheel index first, and the real image installs everything else at
+# the versions uv.lock holds.
+#
+# kornia and einops look unused from the outside. They are imported at the top
+# of BiRefNet's own birefnet.py, which is downloaded and executed because the
+# model is loaded with trust_remote_code=True. Drop either one and the model
+# will not import. timm and torchvision are in there too, for the backbone and
+# for deform_conv2d. transformers stays on 4.x: birefnet.py at the pinned
+# revision is 4.x code.
+[project.optional-dependencies]
+real = [
+    "torch>=2.6",
+    "torchvision>=0.21",
+    "transformers>=4.51,<5",
+    "timm>=1.0.15",
+    "kornia>=0.7.3",
+    "einops>=0.8",
 ]
 
 [build-system]

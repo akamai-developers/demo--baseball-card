@@ -21,7 +21,10 @@ COPY packages/card /app/packages/card
 COPY services/art /app/services/art
 RUN uv sync --frozen --no-dev --no-editable --package card-art
 
-RUN useradd --uid 10003 --create-home --shell /usr/sbin/nologin app
+# The pool of painted backgrounds lives in /data, a named volume. Mounted on an
+# empty image directory, it inherits that directory's owner.
+RUN useradd --uid 10003 --create-home --shell /usr/sbin/nologin app \
+    && mkdir -p /data && chown app:app /data
 USER app
 
 EXPOSE 8002

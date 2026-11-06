@@ -3,7 +3,7 @@
     X-Model      the model id, or a mock name when BACKEND=mock
     X-License    the licence that model ships under
     X-Infer-Ms   how long the inference itself took
-    X-Ran-On     akamai-gpu0, akamai-gpu1, akamai-cpu, or a mock- label
+    X-Ran-On     akamai-gpu0, akamai-gpu1, akamai-cpu, local-cpu, or a mock- label
 
 The api copies these straight into the step ledger, so the line on the back of
 the card is what the service reported about itself, not what the orchestrator

@@ -6,6 +6,7 @@ skip themselves with a readable reason when Docker or the mock stack is not up.
 
 from __future__ import annotations
 
+import json
 import os
 import shlex
 import shutil
@@ -40,6 +41,9 @@ def clean_settings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     monkeypatch.setenv("SERVICE_NAME", "api")
     monkeypatch.setenv("GPU_LABEL", "mock")
     monkeypatch.setenv("DATA_DIR", str(tmp_path / "data"))
+    # No pool, so an art service started in process paints every request and
+    # starts no painter. The pool's tests turn it on.
+    monkeypatch.setenv("ART_POOL_SIZE", "0")
     for name in ("CUTOUT_URL", "ART_URL", "LLM_URL", "LLM_MODEL", "LLM_LICENSE", "LLM_RAN_ON"):
         monkeypatch.setenv(name, "")
     yield get_settings()
@@ -93,6 +97,37 @@ def docker() -> list[str]:
     if cmd is None:
         pytest.skip('docker does not answer. Where it needs sudo, set DOCKER="sudo -E docker"')
     return cmd
+
+
+def compose_config(
+    docker: list[str],
+    profiles: tuple[str, ...],
+    env: dict[str, str] | None = None,
+    files: tuple[str, ...] = (),
+) -> dict:
+    """`docker compose config` for these profiles, as a dict.
+
+    Compose reads CARD_API_KEY when it starts, for vLLM's key. A clone that has
+    not run `make env` has none, so a stand-in is passed when neither the shell
+    nor .env holds one. The rendered config holds the key from .env: compare
+    names, or use refute_key, and never print it.
+    """
+    environ = dict(os.environ)
+    if not environ.get("CARD_API_KEY") and not dotenv_value("CARD_API_KEY"):
+        environ["CARD_API_KEY"] = TEST_KEY
+    flags = [flag for name in files for flag in ("-f", name)]
+    flags += [flag for name in profiles for flag in ("--profile", name)]
+    result = subprocess.run(
+        [*docker, "compose", *flags, "config", "--format", "json"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        env={**environ, **(env or {})},
+        timeout=60,
+    )
+    if result.returncode != 0:
+        pytest.fail(f"docker compose config failed:\n{result.stderr}")
+    return json.loads(result.stdout)
 
 
 class Secret(str):

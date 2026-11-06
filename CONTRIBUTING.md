@@ -31,6 +31,24 @@ for compose, and plain `sudo` drops them.
 If 8443 is taken on your machine, set `GATEWAY_PORT` in `.env`. The stack, the
 Makefile and the tests all read it.
 
+## the real models
+
+The tests run the BiRefNet and FLUX code with the model stubbed, so they need
+no torch and no weights. One test runs BiRefNet for real, on your CPU:
+
+```bash
+make test-slow
+```
+
+It adds torch and BiRefNet's other dependencies to `.venv` the first time,
+about 1 GB, and the weights to Hugging Face's cache in your home directory,
+444 MB. Then it takes about a minute. `make card-cpu-cutout` runs the same
+model inside the mock stack and makes a card with it.
+
+FLUX and Gemma 4 do not run on a laptop. `make vision-base` builds the CUDA
+torch image the node's cutout and art images start from, 15 GB, if you want to
+see a change to those images build before it reaches a GPU.
+
 ## the browser tests
 
 `tests/integration/test_app.py` and `tests/integration/test_app_camera.py`
@@ -114,6 +132,11 @@ the api sends back. `tests/unit/test_copy.py` reads those files.
 Add a dependency to the `pyproject.toml` of the package that imports it, with a
 lower bound, then run `uv lock` and commit `uv.lock`. The images install what
 the lock holds.
+
+torch is the exception. The lock holds the CPU build from PyTorch's CPU index,
+and `services/vision-base.Dockerfile` installs the CUDA build of the same
+version on the node. A torch upgrade changes both, and
+`tests/unit/test_vision_base.py` fails until they agree.
 
 ## secrets
 

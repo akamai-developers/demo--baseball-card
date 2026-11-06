@@ -179,7 +179,7 @@ def test_a_run_that_fell_back_to_the_cpu_claims_neither():
 
 def test_a_real_model_on_a_cpu_is_not_a_mock_run():
     """BiRefNet really ran on a laptop. No GPU did."""
-    steps = [_step("cutout", "akamai-cpu"), _step("art", "mock"), _step("text", "mock")]
+    steps = [_step("cutout", "local-cpu"), _step("art", "mock"), _step("text", "mock")]
     assert made_line(steps) == MADE_ON_CPU
 
 
