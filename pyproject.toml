@@ -1,18 +1,23 @@
 [project]
 name = "baseball-card"
-version = "0.2.0"
+version = "0.3.0"
 description = "A baseball card from a photo and a name, made by three open-weight models on one Akamai Cloud GPU node."
 requires-python = ">=3.12"
 dependencies = [
     "card-common",
     "card-api",
     "card-render[render]",
+    "card-comps",
+    "card-cli",
 ]
 
 [dependency-groups]
 dev = [
     # The model services, so their routes can be tested in process. The root
     # project does not depend on them: each one ships in its own image.
+    "card-cutout",
+    "card-art",
+    "card-gpu-stats",
     "card-llm-mock",
     "pytest>=8.3",
     "pytest-asyncio>=0.24",
@@ -29,10 +34,15 @@ package = false
 card-common = { workspace = true }
 card-api = { workspace = true }
 card-render = { workspace = true }
+card-comps = { workspace = true }
+card-cli = { workspace = true }
+card-cutout = { workspace = true }
+card-art = { workspace = true }
+card-gpu-stats = { workspace = true }
 card-llm-mock = { workspace = true }
 
 [tool.uv.workspace]
-members = ["packages/*", "services/*"]
+members = ["packages/*", "services/*", "cli"]
 
 [tool.ruff]
 line-length = 100
@@ -46,7 +56,9 @@ ignore = ["B008"]  # FastAPI puts Depends() and Header() in argument defaults on
 [tool.ruff.lint.isort]
 # Every package comes from the workspace. ruff cannot see that on its own and
 # would sort them into the third-party block.
-known-first-party = ["api", "card", "common", "llm_mock", "tests"]
+known-first-party = [
+    "api", "art", "card", "cardctl", "common", "comps", "cutout", "gpu_stats", "llm_mock", "tests"
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

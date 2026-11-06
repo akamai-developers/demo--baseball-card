@@ -1,0 +1,18 @@
+[project]
+name = "card-cli"
+version = "0.3.0"
+description = "cardctl. Posts a photo and a stats file, waits, and writes the card."
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.27",
+]
+
+[project.scripts]
+cardctl = "cardctl.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cardctl"]

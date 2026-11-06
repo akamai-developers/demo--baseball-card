@@ -8,6 +8,7 @@ where this repo's build runner keeps the output of each of its runs.
 from __future__ import annotations
 
 import subprocess
+import time
 
 import httpx
 import pytest
@@ -33,12 +34,33 @@ def compose_logs(docker: list[str]) -> str:
     return result.stdout + result.stderr
 
 
+def make_a_card(gateway: str, headers: dict, portrait) -> None:
+    """A whole card: the api calls cutout, art and the llm, each with the key."""
+    created = httpx.post(
+        f"{gateway}/cards",
+        headers=headers,
+        files={"photo": ("me.jpg", portrait.read_bytes(), "image/jpeg")},
+        data={"stats": '{"name": "Sam Rivera", "metrics": {"exit_velo_mph": 88.5}}'},
+        timeout=30,
+    )
+    assert created.status_code == 202, created.text
+    card_id = created.json()["card_id"]
+    for _ in range(240):
+        job = httpx.get(f"{gateway}/cards/{card_id}", headers=headers, timeout=10).json()
+        if job["status"] in ("done", "failed"):
+            break
+        time.sleep(0.25)
+    httpx.delete(f"{gateway}/cards/{card_id}", headers=headers, timeout=30)
+
+
 @pytest.mark.integration
-def test_the_key_never_reaches_a_log(docker: list[str], gateway: str, live_key: str) -> None:
+def test_the_key_never_reaches_a_log(
+    docker: list[str], gateway: str, live_key: str, portrait
+) -> None:
     """Send the key through every service, then read every log the stack wrote.
 
-    /healthz makes the api call each model service with the key, which is the
-    traffic most likely to leak it.
+    A card and /healthz make the api call each model service with the key,
+    which is the traffic most likely to leak it.
     """
     headers = {"Authorization": f"Bearer {live_key}"}
     httpx.get(f"{gateway}/healthz", headers=headers, timeout=10)
@@ -51,9 +73,25 @@ def test_the_key_never_reaches_a_log(docker: list[str], gateway: str, live_key: 
         json={"messages": [{"role": "user", "content": "hello"}]},
         timeout=30,
     )
+    httpx.post(
+        f"{gateway}/cutout",
+        headers=headers,
+        files={"image": ("me.jpg", portrait.read_bytes(), "image/jpeg")},
+        timeout=60,
+    )
+    httpx.post(
+        f"{gateway}/art/generate",
+        headers=headers,
+        json={"prompt": "a stadium", "width": 256, "height": 352},
+        timeout=60,
+    )
+    httpx.get(f"{gateway}/gpu", headers=headers, timeout=10)
+    make_a_card(gateway, headers, portrait)
 
     logs = compose_logs(docker)
     assert "GET /healthz 200" in logs, "the access log is not there, so this proved nothing"
+    for line in ("POST /cutout 200", "POST /art/generate 200", "GET /gpu 200", "POST /cards 202"):
+        assert line in logs, f"no {line} in the logs, so this proved less than it says"
     refute_key(logs, live_key, "the stack's logs")
     refute_header(logs)
 

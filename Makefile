@@ -27,7 +27,13 @@ export DOCKER GATEWAY_PORT GATEWAY
 # is up in seconds.
 WAIT_S ?= 90
 
-.PHONY: help env up-mock down logs ps card-fixture test lint
+# `make card` reads these. PHOTO is the one you must give.
+PHOTO ?=
+STATS ?= examples/stats.json
+STYLE ?=
+OUT ?= out
+
+.PHONY: help env up-mock down logs ps card-mock card card-fixture test lint
 
 # ---- On a laptop ----------------------------------------------------------
 # The mock stack: every service in Docker with stub models, behind Caddy on
@@ -79,6 +85,18 @@ logs: ## Follow the container logs
 
 ps: ## What is running
 	$(COMPOSE) --profile mock --profile gpu ps
+
+# A card through the running stack: cardctl posts the photo and the stats to
+# the gateway, waits, and writes the card into OUT. On a laptop that is the
+# mock stack. With make tunnel open, it is the node.
+card-mock: ## The test photo's card through the stack, into out/. STYLE=
+	uv run cardctl make --photo tests/fixtures/portrait.jpg --stats examples/stats.json \
+		--out out --host $(GATEWAY) $(if $(STYLE),--style $(STYLE),)
+
+card: ## Your card through the stack. PHOTO= (required) STATS= STYLE= OUT=
+	@if [ -z "$(PHOTO)" ]; then echo "make card needs a photo: make card PHOTO=me.jpg"; exit 2; fi
+	uv run cardctl make --photo "$(PHOTO)" --stats "$(STATS)" --out "$(OUT)" \
+		--host $(GATEWAY) $(if $(STYLE),--style $(STYLE),)
 
 # The card on its own: no stack, no models. Playwright's Chromium draws it, and
 # the first run downloads it into Playwright's cache. STYLE=akamai or classic.

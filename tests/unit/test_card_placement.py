@@ -11,6 +11,18 @@ import numpy as np
 import pytest
 from PIL import Image, ImageDraw
 
+from api.qa import (
+    FACE_LARGE,
+    FACE_SMALL,
+    LARGE_FACE,
+    PLACED_HIGH,
+    PLACED_LOW,
+    SMALL_FACE,
+    TIGHT,
+    check_spot,
+    placed_high,
+    placed_low,
+)
 from card import PICTURE_H, PICTURE_W
 from card.placement import (
     DEFAULT_PLACEMENT,
@@ -190,6 +202,48 @@ def test_four_real_photos_stand_on_the_bottom_edge_of_the_card(photo):
     spot = place(crop, face, PICTURE, crown=top_of_head)
     assert spot.top + spot.height >= PICTURE[1]
     assert head_top(spot, top_of_head) >= 0
+
+
+# The warnings each photo's job gets on the card, from api.qa.
+PHOTO_WARNINGS = {
+    "cut at the chest": [PLACED_LOW, FACE_LARGE, TIGHT],
+    "cut at the waist": [],
+    "full swing": [],
+    "cut above the belt": [FACE_LARGE, TIGHT],
+}
+
+
+@pytest.mark.parametrize("photo", sorted(PHOTOS))
+def test_four_real_photos_carry_the_warnings_for_where_they_land(photo):
+    """The face inside the bands, or the warning that says which one it left,
+    measured on the card's own picture."""
+    crop, face, top_of_head = PHOTOS[photo]
+    spot = place(crop, face, PICTURE, crown=top_of_head)
+    said = check_spot(spot, PICTURE)
+    assert said == PHOTO_WARNINGS[photo]
+    _, y, _, height = spot.face
+    centre, tall = (y + height / 2) / PICTURE[1], height / PICTURE[1]
+    called = [
+        word
+        for outside, word in (
+            (placed_low(centre), PLACED_LOW),
+            (placed_high(centre), PLACED_HIGH),
+            (tall < SMALL_FACE, FACE_SMALL),
+            (tall > LARGE_FACE, FACE_LARGE),
+        )
+        if outside
+    ]
+    assert [word for word in said if word != TIGHT] == called
+
+
+def test_the_tight_photos_are_the_ones_cut_off_above_the_waist():
+    """The chest and the belt grow past 0.22 to reach the edge. The waist does not."""
+    tight = {
+        photo
+        for photo, (crop, face, top) in PHOTOS.items()
+        if TIGHT in check_spot(place(crop, face, PICTURE, crown=top), PICTURE)
+    }
+    assert tight == {"cut at the chest", "cut above the belt"}
 
 
 def test_the_full_swing_is_capped():

@@ -6,7 +6,12 @@ requires-python = ">=3.12"
 members = [
     "baseball-card",
     "card-api",
+    "card-art",
+    "card-cli",
     "card-common",
+    "card-comps",
+    "card-cutout",
+    "card-gpu-stats",
     "card-llm-mock",
     "card-render",
 ]
@@ -44,16 +49,21 @@ wheels = [
 
 [[package]]
 name = "baseball-card"
-version = "0.2.0"
+version = "0.3.0"
 source = { virtual = "." }
 dependencies = [
     { name = "card-api" },
+    { name = "card-cli" },
     { name = "card-common" },
+    { name = "card-comps" },
     { name = "card-render", extra = ["render"] },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "card-art" },
+    { name = "card-cutout" },
+    { name = "card-gpu-stats" },
     { name = "card-llm-mock" },
     { name = "httpx" },
     { name = "pytest" },
@@ -65,12 +75,17 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "card-api", editable = "services/api" },
+    { name = "card-cli", editable = "cli" },
     { name = "card-common", editable = "packages/common" },
+    { name = "card-comps", editable = "packages/comps" },
     { name = "card-render", extras = ["render"], editable = "packages/card" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "card-art", editable = "services/art" },
+    { name = "card-cutout", editable = "services/cutout" },
+    { name = "card-gpu-stats", editable = "services/gpu-stats" },
     { name = "card-llm-mock", editable = "services/llm-mock" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "pytest", specifier = ">=8.3" },
@@ -81,26 +96,70 @@ dev = [
 
 [[package]]
 name = "card-api"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "services/api" }
 dependencies = [
     { name = "card-common" },
+    { name = "card-comps" },
+    { name = "card-render", extra = ["render"] },
     { name = "fastapi" },
     { name = "httpx" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "python-multipart" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "card-common", editable = "packages/common" },
+    { name = "card-comps", editable = "packages/comps" },
+    { name = "card-render", extras = ["render"], editable = "packages/card" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "httpx", specifier = ">=0.27" },
+    { name = "numpy", specifier = ">=2.0" },
+    { name = "pillow", specifier = ">=11.0" },
+    { name = "python-multipart", specifier = ">=0.0.12" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
 
 [[package]]
+name = "card-art"
+version = "0.3.0"
+source = { editable = "services/art" }
+dependencies = [
+    { name = "card-common" },
+    { name = "card-render" },
+    { name = "fastapi" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "card-common", editable = "packages/common" },
+    { name = "card-render", editable = "packages/card" },
+    { name = "fastapi", specifier = ">=0.115" },
+    { name = "numpy", specifier = ">=2.0" },
+    { name = "pillow", specifier = ">=11.0" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
+]
+
+[[package]]
+name = "card-cli"
+version = "0.3.0"
+source = { editable = "cli" }
+dependencies = [
+    { name = "httpx" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "httpx", specifier = ">=0.27" }]
+
+[[package]]
 name = "card-common"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "packages/common" }
 dependencies = [
     { name = "fastapi" },
@@ -116,8 +175,65 @@ requires-dist = [
 ]
 
 [[package]]
+name = "card-comps"
+version = "0.3.0"
+source = { editable = "packages/comps" }
+dependencies = [
+    { name = "card-common" },
+    { name = "numpy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "card-common", editable = "packages/common" },
+    { name = "numpy", specifier = ">=2.0" },
+]
+
+[[package]]
+name = "card-cutout"
+version = "0.3.0"
+source = { editable = "services/cutout" }
+dependencies = [
+    { name = "card-common" },
+    { name = "card-render" },
+    { name = "fastapi" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "python-multipart" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "card-common", editable = "packages/common" },
+    { name = "card-render", editable = "packages/card" },
+    { name = "fastapi", specifier = ">=0.115" },
+    { name = "numpy", specifier = ">=2.0" },
+    { name = "pillow", specifier = ">=11.0" },
+    { name = "python-multipart", specifier = ">=0.0.12" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
+]
+
+[[package]]
+name = "card-gpu-stats"
+version = "0.3.0"
+source = { editable = "services/gpu-stats" }
+dependencies = [
+    { name = "card-common" },
+    { name = "fastapi" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "card-common", editable = "packages/common" },
+    { name = "fastapi", specifier = ">=0.115" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
+]
+
+[[package]]
 name = "card-llm-mock"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "services/llm-mock" }
 dependencies = [
     { name = "card-common" },
@@ -134,7 +250,7 @@ requires-dist = [
 
 [[package]]
 name = "card-render"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "packages/card" }
 dependencies = [
     { name = "numpy" },
@@ -948,6 +1064,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/74/26/2fbeedb218a787a5eea551c7532cac4e009f83d689dd2faa0d0353473f86/python_dotenv-1.2.4.tar.gz", hash = "sha256:f0d53e69935a851c0dcc78f3ab7aaccd8cabef0b92382b576b824212902873c0", size = 60824, upload-time = "2026-10-01T05:36:10Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/60/d1/38f3a3405989a89ac18390803e70c6ad7c7760da4f9b83cbeca0c44a0c72/python_dotenv-1.2.4-py3-none-any.whl", hash = "sha256:42269a8a5b3fd54ffa6f3d84b18abed50064717576b4ecf03dc4a55d8aa04fdc", size = 23266, upload-time = "2026-10-01T05:36:08.633Z" },
+]
+
+[[package]]
+name = "python-multipart"
+version = "0.0.33"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9f/b7/15b905f6142a9a8a68f66900788da1a32e4d4254452783b37ad1eccb0506/python_multipart-0.0.33.tar.gz", hash = "sha256:b8112424a6abd162ec08d390565dd113ad699f2fe6fef3c987b8bbcbfe9e390d", size = 50499, upload-time = "2026-10-31T14:23:47.461Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dd/1b/6b1b4164ec734cac911460ab599bfbe46afedd42c5c9627fe4235942c314/python_multipart-0.0.33-py3-none-any.whl", hash = "sha256:8f16c07b36add9da6b2ee87d3efcaf0a45a6de9c3d0a5dd94e9ccf7675a7bc45", size = 32253, upload-time = "2026-10-31T14:23:46.33Z" },
 ]
 
 [[package]]

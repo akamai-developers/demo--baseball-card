@@ -1,4 +1,4 @@
-"""Pydantic models for the stats a card is made from, a card job, and health reports."""
+"""Pydantic models for the stats a card is made from, a card job, health and the GPUs."""
 
 from __future__ import annotations
 
@@ -160,3 +160,22 @@ class HealthReport(BaseModel):
     version: str
     backend: str
     services: dict[str, ServiceHealth] = Field(default_factory=dict)
+
+
+class Gpu(BaseModel):
+    """One card, as nvidia-smi describes it."""
+
+    index: int
+    name: str
+    utilization_pct: int
+    memory_used_mb: int
+    memory_total_mb: int
+    temperature_c: int
+
+
+class GpuReport(BaseModel):
+    """GET /gpu, from the gpu-stats service. Never through the api."""
+
+    backend: str
+    gpus: list[Gpu] = Field(default_factory=list)
+    error: str | None = None

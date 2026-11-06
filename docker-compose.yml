@@ -7,9 +7,13 @@
 # Domain mode replaces Caddy's port with 80 and 443: docker-compose.domain.yml.
 #
 # The model services answer to the plain names the Caddyfile and the api use:
-# llm here. The gpu profile's real ones carry a network alias back to the same
-# name, because one service cannot carry two images. Only one profile runs at a
-# time, so the alias never collides.
+# cutout, art and llm. The gpu profile's real ones carry a network alias back to
+# the same name, because one service cannot carry two images. Only one profile
+# runs at a time, so the alias never collides.
+#
+# The mock stack stands in for the default one-GPU node, so every mock labels
+# itself mock-gpu0, the card the real model would be on. No GPU is used on a
+# laptop, and the back of the card says so.
 
 name: baseball-card
 
@@ -51,11 +55,17 @@ services:
       dockerfile: services/api/Dockerfile
     profiles: ["mock", "gpu"]
     restart: unless-stopped
+    # When the api stops, a card in flight gets 30 s to finish (Jobs.drain).
+    # Docker kills a container 10 s after asking it to stop unless told
+    # otherwise, and a card cut off that way says failed for good.
+    stop_grace_period: 40s
     environment:
       SERVICE_NAME: api
       DATA_DIR: /data
-      # The same address in both profiles, because the real service answers
-      # to the same name.
+      # The same addresses in both profiles, because the real services answer
+      # to the same names.
+      CUTOUT_URL: http://cutout:8001
+      ART_URL: http://art:8002
       LLM_URL: http://llm:8000
       # vLLM reports none of this about itself, so the api is told. The node's
       # .env overrides all three.
@@ -72,6 +82,42 @@ services:
       start_period: 5s
     networks: [card]
 
+  # The plain-wall matte in place of BiRefNet.
+  cutout:
+    <<: *mock-service
+    build:
+      context: .
+      dockerfile: services/cutout/Dockerfile
+    environment:
+      SERVICE_NAME: cutout
+      BACKEND: mock
+      DEVICE: cpu
+      GPU_LABEL: mock-gpu0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8001/livez', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 3s
+
+  # A drawn ballpark in place of FLUX.2 klein.
+  art:
+    <<: *mock-service
+    build:
+      context: .
+      dockerfile: services/art/Dockerfile
+    environment:
+      SERVICE_NAME: art
+      BACKEND: mock
+      DEVICE: cpu
+      GPU_LABEL: mock-gpu0
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8002/livez', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 3s
+
   # vLLM's two routes and its key check, without vLLM.
   llm:
     <<: *mock-service
@@ -85,6 +131,24 @@ services:
       LLM_MODEL: ${LLM_MODEL:-mock/wordlist}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/livez', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 3s
+
+  # The numbers in the app's node panel. In the mock profile it has no GPU to
+  # look at and says so: every response carries "backend": "mock".
+  gpu-stats:
+    <<: *mock-service
+    build:
+      context: .
+      dockerfile: services/gpu-stats/Dockerfile
+    environment:
+      SERVICE_NAME: gpu-stats
+      BACKEND: mock
+      DEVICE: cpu
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8003/livez', timeout=3)"]
       interval: 5s
       timeout: 5s
       retries: 12

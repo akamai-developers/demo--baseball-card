@@ -46,6 +46,18 @@ def clean_settings(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     get_settings.cache_clear()
 
 
+@pytest.fixture(scope="session")
+def portrait() -> Path:
+    """The CC0 fixture photo. tests/fixtures/SOURCES.md has the licence."""
+    return REPO_ROOT / "tests" / "fixtures" / "portrait.jpg"
+
+
+@pytest.fixture(scope="session")
+def example_stats() -> str:
+    """examples/stats.json as text, which is what a caller posts."""
+    return (REPO_ROOT / "examples" / "stats.json").read_text()
+
+
 def dotenv_value(name: str) -> str | None:
     """Read one value out of the repo .env without importing anything."""
     env_path = REPO_ROOT / ".env"
@@ -147,3 +159,23 @@ def gateway(live_key: str) -> str:
     if health.status_code != 200:
         pytest.skip(f"the gateway at {url} does not take this repo's key. Is it another stack?")
     return url
+
+
+@pytest.fixture(scope="session")
+def mock_backends(gateway: str, live_key: str) -> None:
+    """Skip a test that only makes sense when every service in the stack is a mock.
+
+    A stack started with a real model in it would fail the mock-only
+    assertions with "akamai-cpu is not mock", which reads like a bug and is
+    not one.
+    """
+    health = httpx.get(
+        f"{gateway}/healthz", headers={"Authorization": f"Bearer {live_key}"}, timeout=10
+    ).json()
+    real = [
+        name
+        for name, svc in health.get("services", {}).items()
+        if svc.get("backend") not in (None, "mock", "vllm")
+    ]
+    if real:
+        pytest.skip(f"{', '.join(real)} is running a real backend. run: make down && make up-mock")

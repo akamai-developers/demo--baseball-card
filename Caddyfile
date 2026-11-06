@@ -68,6 +68,22 @@
 		reverse_proxy llm:8000
 	}
 
+	# The two vision models, each on the one path it serves. Each checks the
+	# key itself. Their /healthz and /livez are not routed: the api's /healthz
+	# reports them.
+	handle /cutout {
+		reverse_proxy cutout:8001
+	}
+	handle /art/generate {
+		reverse_proxy art:8002
+	}
+
+	# nvidia-smi, straight from its own service. The api does not proxy it, so
+	# a panel polling every two seconds never queues behind a card render.
+	handle /gpu {
+		reverse_proxy gpu-stats:8003
+	}
+
 	# Everything else goes to the api. Its key gate answers 401 to any path
 	# without the key, one that does not exist included, and only /livez is
 	# open.

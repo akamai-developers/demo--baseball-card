@@ -20,6 +20,18 @@ import pytest
 from PIL import Image, ImageDraw, ImageFilter
 
 import card.compose as compose
+from api.qa import (
+    FACE_LARGE,
+    FACE_SMALL,
+    LARGE_FACE,
+    PLACED_HIGH,
+    PLACED_LOW,
+    SMALL_FACE,
+    TIGHT,
+    check_face,
+    placed_high,
+    placed_low,
+)
 from card import PICTURE_H, PICTURE_W
 from card.compose import (
     DEFAULT_PLACEMENT,
@@ -211,6 +223,44 @@ def test_every_person_stands_on_the_bottom_edge(name, picture):
     hero = compose_hero(_art(), cutout, picture, face=head if sent else None)
     assert _bottom_row(hero) == picture[1] - 1, "the person reaches the last row"
     assert not _green(hero)[0].any(), "the top edge cuts the face"
+
+
+# The warnings each person's job gets on the card, from api.qa. Every one
+# reaches the bottom edge, so the only words are about the face.
+WARNED = {
+    "full body": [],
+    "bat": [],
+    "waist up": [FACE_LARGE],
+    "head and shoulders": [PLACED_LOW, FACE_LARGE, TIGHT],
+    "wide": [FACE_LARGE],
+    "no face box": [],
+}
+
+
+@pytest.mark.parametrize("name", list(PEOPLE))
+def test_every_person_carries_the_warnings_for_where_their_face_landed(name):
+    """The face measured in the pixels compose drew is inside the bands, or
+    the job carries the warning that names the band. The check uses compose's
+    arithmetic without drawing, so this holds the two together."""
+    size, head, body, sent = PEOPLE[name]
+    cutout = figure(size, head, *body)
+    face = head if sent else None
+    hero = compose_hero(_art(), cutout, PICTURE, face=face)
+
+    said = check_face(cutout, face, sent=sent)
+    assert said == WARNED[name]
+    centre, height = landed(hero)
+    called = [
+        word
+        for outside, word in (
+            (placed_low(centre), PLACED_LOW),
+            (placed_high(centre), PLACED_HIGH),
+            (height < SMALL_FACE, FACE_SMALL),
+            (height > LARGE_FACE, FACE_LARGE),
+        )
+        if outside
+    ]
+    assert [word for word in said if word != TIGHT] == called
 
 
 def test_a_tall_cutout_lands_its_face_at_the_target_and_runs_off_the_bottom():

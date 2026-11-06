@@ -15,12 +15,14 @@ GATEWAY=http://localhost:8443
 
 ## the key
 
-**One key, `CARD_API_KEY`, and every service checks it.** The services use one
-FastAPI gate in `packages/common/src/common/auth.py`: `Authorization: Bearer
-<key>`, compared with `hmac.compare_digest`, 401 with `WWW-Authenticate:
-Bearer`. vLLM checks the same key itself, as `VLLM_API_KEY`. The api sends the
-key on its own calls to the model services, so the internal network is not a
-trust boundary.
+**One key, `CARD_API_KEY`, and every service checks it.** The api, cutout, art
+and gpu-stats use one FastAPI gate in `packages/common/src/common/auth.py`:
+`Authorization: Bearer <key>`, compared with `hmac.compare_digest`, 401 with
+`WWW-Authenticate: Bearer`. vLLM checks the same key itself, as
+`VLLM_API_KEY`. The api sends the key on its own calls to the model services,
+so the internal network is not a trust boundary. Caddy routes each model
+service's one path, `/cutout`, `/art/generate`, `/v1/*` and `/gpu`, and
+nothing else of theirs.
 
 **One path is open: `/livez`.** It says `ok` and nothing else. Every other
 path answers 401 without the key, one that does not exist included, so a
@@ -54,17 +56,18 @@ uv run pytest tests/unit/test_auth.py tests/unit/test_auth_limit.py -q
 ```
 
 **The key never reaches a log.** Each service logs method, path, status and
-milliseconds, never a header or a body. Caddy deletes the request and response
-headers from its access log and from every other line it writes. The test
-sends the key through every service, then reads every log the stack wrote and
-every file under `build-logs/`.
+milliseconds, never a header, a body or a photo's file name. Caddy deletes the
+request and response headers from its access log and from every other line it
+writes. The test sends the key through every service and makes a card, then
+reads every log the stack wrote and every file under `build-logs/`.
 
 ```bash
 uv run pytest tests/security/test_no_key_in_logs.py -q
 ```
 
 **The key stays off command lines.** `make env` writes it with shell builtins,
-and `make up-mock` gives it to `curl` on stdin.
+and `make up-mock` gives it to `curl` on stdin. `cardctl` reads it from the
+environment or `.env` and has no flag for it.
 
 **Nothing secret is in the repo.** A test reads every file git would commit for
 anything shaped like a key, a token or a private key, and holds `.env`,
@@ -99,6 +102,37 @@ uv run pytest tests/security/test_domain_mode.py -q
 grep -n 'max_size' Caddyfile
 ```
 
+## the data
+
+**A photo is re-encoded before anything reads it.** The api decodes the upload
+with Pillow, applies its EXIF orientation, drops every EXIF tag, the GPS block
+a phone writes included, scales the long side to 2048 px, and stores a JPEG of
+its own. A file over 15 MB, or one Pillow cannot read, is refused with a
+sentence before anything is stored.
+
+```bash
+uv run pytest tests/unit/test_photo.py -q
+```
+
+**A card lives 24 hours.** The sweeper removes a card, its photo and its
+intermediates `RETENTION_HOURS` after it was made, 24 by default, and looks
+every `SWEEP_EVERY_S`. `DELETE /cards/{id}` removes them at once. A card still
+being made is stopped first and waited for, so nothing it was writing lands
+after its files are gone. The integration test reads the data volume itself.
+
+```bash
+uv run pytest tests/unit/test_sweeper.py tests/unit/test_delete.py -q
+uv run pytest tests/integration/test_cards.py -q -k delete
+```
+
+**A card id cannot reach outside the data volume.** Ids are 128-bit random
+tokens, and anything with a slash or a dot is a 404 before it is joined to a
+path.
+
+```bash
+uv run pytest tests/unit/test_storage.py -q -k escape
+```
+
 ## the card
 
 **The card's pages reach nothing.** Chromium draws each side from a page whose
@@ -123,8 +157,6 @@ These are the design. Each moves up to a claim with a command when it is built.
 - The node's `.env` at mode 600, written over SSH, with the key on no command
   line on the node.
 - `make rotate-key`, and a 401 for the old key after it.
-- EXIF stripped from every upload, photos downscaled, cards deleted after
-  `RETENTION_HOURS`, and `DELETE /cards/{id}` at once.
 
 ## not covered
 

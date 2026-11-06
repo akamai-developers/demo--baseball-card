@@ -60,6 +60,18 @@ The workspace has one version, `__version__` in
 `CHANGELOG.md` sets the same version there and in every `pyproject.toml`.
 `tests/unit/test_version.py` fails until they agree.
 
+## the writing rules
+
+Every word a person reads is held to them: the README, the docs, the examples,
+the changelog, the card templates, the text model's prompt and the sentences
+the api sends back. `tests/unit/test_copy.py` reads those files.
+
+- No em-dashes. Use a period or a comma.
+- None of the words listed in `BANNED` in `services/api/src/api/writing.py`.
+  They are the words that make a page read like any vendor's blog.
+- Short sentences, one idea each, with numbers and file names over adjectives.
+- Say what was only tested in mock mode.
+
 ## dependencies
 
 Add a dependency to the `pyproject.toml` of the package that imports it, with a
