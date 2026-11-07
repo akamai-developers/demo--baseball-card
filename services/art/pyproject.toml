@@ -1,6 +1,6 @@
 [project]
 name = "card-art"
-version = "0.8.0"
+version = "0.8.1"
 description = "Paints the stadium behind the person. FLUX.2 klein in real mode, a drawn park in mock mode."
 requires-python = ">=3.12"
 dependencies = [

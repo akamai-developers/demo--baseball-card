@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Make one card on the node and check that it really was made there.
+# Make one card on the node and check that it was made there.
 #
 #   make smoke                                  the test photo
 #   make smoke PHOTO=me.jpg STATS=stats.json    your own
@@ -70,7 +70,7 @@ for side in front back; do
 	fi
 done
 
-# ---- 2. it really ran on the GPUs -------------------------------------------
+# ---- 2. it ran on the GPUs --------------------------------------------------
 
 log "where each model step ran"
 # cardctl wrote the whole job to card.json beside the PNGs, so this reads the

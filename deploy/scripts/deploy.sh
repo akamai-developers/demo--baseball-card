@@ -81,18 +81,55 @@ note "ssh key secrets/ssh/id_ed25519"
 ensure_api_key
 note "CARD_API_KEY $KEY_STATE, in .env"
 
-# The only source allowed to reach port 22. Akamai's own echo service, over
-# IPv4 because the firewall rule is IPv4.
+# The addresses allowed to reach port 22: ADMIN_CIDR from .env, one or more
+# IPv4 blocks separated by commas, or else this machine's public address as a
+# /32. Akamai's own echo service says which, over IPv4 because the rule is
+# IPv4. It is asked even when .env pins ADMIN_CIDR, because every ssh below
+# comes from this machine: a list with no block for it is a firewall that
+# drops this script's own connections, found out ten minutes into a node that
+# bills by the hour. Seen on 2026-11-07, with a laptop's address pinned in the
+# .env of the box the deploy ran on.
+detected="$(curl -4 -sf --max-time 10 https://whatismyip.akamai.com || true)"
+[[ "$detected" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] || detected=""
+ADMIN_BLOCKS=()
 if [ -z "${ADMIN_CIDR:-}" ]; then
-	detected="$(curl -4 -sf --max-time 10 https://whatismyip.akamai.com || true)"
-	[[ "$detected" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] \
+	[ -n "$detected" ] \
 		|| die "could not find this machine's public IPv4 address. Set ADMIN_CIDR in .env, for example ADMIN_CIDR=203.0.113.4/32."
 	ADMIN_CIDR="$detected/32"
+	ADMIN_BLOCKS=("$ADMIN_CIDR")
 	note "ADMIN_CIDR $ADMIN_CIDR, detected. Put it in .env to pin it."
 else
-	require_plain ADMIN_CIDR "$ADMIN_CIDR"
-	note "ADMIN_CIDR $ADMIN_CIDR, from .env"
+	# A space after a comma is a habit, not an error.
+	ADMIN_CIDR="${ADMIN_CIDR// /}"
+	require_plain ADMIN_CIDR "${ADMIN_CIDR//,/}"
+	IFS=, read -r -a ADMIN_BLOCKS <<<"$ADMIN_CIDR"
+	[ "${#ADMIN_BLOCKS[@]}" -gt 0 ] || die "ADMIN_CIDR in .env is only commas. Nothing was created."
+	for block in "${ADMIN_BLOCKS[@]}"; do
+		[ -n "$block" ] || die "ADMIN_CIDR in .env has an empty entry between two commas. Nothing was created."
+		[[ "$block" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}/([0-9]|[12][0-9]|3[0-2])$ ]] \
+			|| die "ADMIN_CIDR in .env holds $block, which is not an IPv4 CIDR block such as 203.0.113.4/32. Blocks are separated by commas. Nothing was created."
+	done
+	if [ -z "$detected" ]; then
+		warn "could not check ADMIN_CIDR against this machine's address: the echo did not answer. If ssh times out below, no block in $ADMIN_CIDR holds this machine."
+		note "ADMIN_CIDR $ADMIN_CIDR, from .env"
+	else
+		inside=""
+		for block in "${ADMIN_BLOCKS[@]}"; do
+			if ip_in_cidr "$detected" "$block"; then
+				inside="$block"
+				break
+			fi
+		done
+		[ -n "$inside" ] \
+			|| die "ADMIN_CIDR in .env is $ADMIN_CIDR, and this machine's public IPv4 address is $detected. No block in it holds $detected, and every ssh in this script comes from $detected, so the firewall would drop it and the wait for ssh would time out. Add $detected/32 to ADMIN_CIDR, or set ADMIN_CIDR= empty in .env to use $detected/32 alone. Nothing was created."
+		note "ADMIN_CIDR $ADMIN_CIDR, from .env. This machine is $detected, inside $inside."
+	fi
 fi
+# The blocks as an HCL list, for the tfvars below.
+admin_hcl=""
+for block in "${ADMIN_BLOCKS[@]}"; do
+	admin_hcl="$admin_hcl${admin_hcl:+, }\"$block\""
+done
 stage_done keys
 
 # ---- 3. terraform -----------------------------------------------------------
@@ -103,14 +140,14 @@ stage "terraform"
 # same values and two of them have no default, a reader can run terraform plan
 # by hand in deploy/terraform and see the real plan, and a rerun with the same
 # .env is a plan with no changes. It is gitignored by the *.tfvars rule. None of
-# it is secret: a public key, an address and four settings.
+# it is secret: a public key, the admin addresses and four settings.
 cat >"$TF_DIR/deploy.auto.tfvars" <<EOF
 # Written by deploy/scripts/deploy.sh from .env. Edit .env, not this file.
 region         = "$REGION"
 gpu_count      = $GPU_COUNT
 instance_type  = "$LINODE_TYPE"
 domain         = "$DOMAIN"
-admin_cidr     = "$ADMIN_CIDR"
+admin_cidrs    = [$admin_hcl]
 ssh_public_key = "$(cat "$SSH_KEY.pub")"
 EOF
 
@@ -159,7 +196,7 @@ ssh_err=""
 until ssh_err="$(ssh_node true 2>&1 >/dev/null)"; do
 	[ "$SECONDS" -lt "$deadline" ] || {
 		note "last ssh error: ${ssh_err:-none}"
-		die "no ssh on $IP after $((SSH_WAIT_S / 60)) minutes. If the error above is a timeout, ADMIN_CIDR ($ADMIN_CIDR) is probably not your public IP. Anything else is a problem on this side."
+		die "no ssh on $IP after $((SSH_WAIT_S / 60)) minutes. If the error above is a timeout, the address this machine leaves by is not in ADMIN_CIDR ($ADMIN_CIDR). Anything else is a problem on this side."
 	}
 	sleep 5
 done

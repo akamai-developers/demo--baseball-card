@@ -276,9 +276,8 @@ def made_line(steps: Sequence[Step]) -> str:
                                        painted on the CPU reports akamai-cpu,
                                        and a card that cost a GPU hour should
                                        not read "mock run"
-      none on a GPU, some real         `make card-cpu-cutout` runs BiRefNet on a
-                                       laptop. No GPU touched it and it is not a
-                                       mock either
+      none on a GPU, some real         a real backend run on a CPU. No GPU
+                                       touched it and it is not a mock either
       nothing but mocks                mock run. The laptop stack labels its
                                        mocks by the GPU each one stands in for,
                                        mock-gpu0, and a mock on a pretend GPU is

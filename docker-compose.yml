@@ -97,27 +97,18 @@ services:
     <<: *mock-service
     build:
       context: .
-      dockerfile: ${CUTOUT_DOCKERFILE:-services/cutout/Dockerfile}
-      args:
-        # Read by services/cutout/Dockerfile.real only.
-        VISION_BASE: baseball-card-vision-base-cpu:local
+      dockerfile: services/cutout/Dockerfile
     environment:
       SERVICE_NAME: cutout
-      BACKEND: ${CUTOUT_BACKEND:-mock}
+      BACKEND: mock
       DEVICE: cpu
-      GPU_LABEL: ${CUTOUT_GPU_LABEL:-mock-gpu0}
-    volumes:
-      # BiRefNet's weights, when the real backend runs here.
-      - hf-cache:/hf-cache
+      GPU_LABEL: mock-gpu0
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8001/livez', timeout=3)"]
       interval: 5s
       timeout: 5s
       retries: 24
-      # The real backend answers nothing until its weights are loaded and the
-      # warm-up has run, because that happens before uvicorn serves. On a CPU
-      # that is about half a minute, and the first run downloads 444 MB.
-      start_period: ${CUTOUT_START_PERIOD:-3s}
+      start_period: 3s
 
   # A drawn ballpark in place of FLUX.2 klein, with the same pool in front.
   art:

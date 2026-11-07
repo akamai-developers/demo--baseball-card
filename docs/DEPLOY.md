@@ -18,10 +18,13 @@ Know how to stop the meter before you start it:
 FORCE=1 make destroy
 ```
 
-**This has not run against a real node yet.** Every script here was run
-against stand-ins for Terraform, SSH and the Linode API, and `make gpu-check`
-against the live API. The deploy itself, the tunnel and the GPU checks have
-not. Where a number on this page was measured, it says when.
+**First run on a real node: 2026-11-07.** `make deploy` made a
+`g2-gpu-rtx4000a1-m` in us-ord, installed the driver, pulled the weights,
+built the images and brought the stack up healthy. `make check` passed, and
+`make smoke` made a card in 7.5 seconds with all three models on the card.
+Before that day every script here had run only against stand-ins for
+Terraform, SSH and the Linode API. Where a number on this page was measured,
+it says when.
 
 ## what you need
 
@@ -32,6 +35,13 @@ not. Where a number on this page was measured, it says when.
   installs a current one.
 - `ssh`, `ssh-keygen`, `rsync`, `curl`, `jq`, `openssl`, `bash` and
   [`uv`](https://docs.astral.sh/uv/). The scripts were run on Linux.
+
+The firewall lets SSH in from the addresses in `ADMIN_CIDR` alone. Left empty,
+that is the machine running `make deploy`. To reach the node from a second
+machine too, a laptop beside the box that deploys, say, put both addresses in
+`ADMIN_CIDR`, separated by commas. The deploy stops before Terraform when no
+block holds the machine it runs on. The tunnel in step 4 ends on the machine
+that opens it.
 
 The scripts make the node's SSH key themselves, in `secrets/ssh/`.
 
@@ -105,8 +115,11 @@ plan, before anything is made. Then, in order:
 
 1. a keypair for this node at `secrets/ssh/id_ed25519`, and the API key from
    `.env`
-2. your public IPv4 address, from `whatismyip.akamai.com`, unless `ADMIN_CIDR`
-   in `.env` names one. It is the only address the firewall lets reach port 22
+2. the addresses allowed to reach port 22: `ADMIN_CIDR` in `.env`, one or
+   more IPv4 blocks separated by commas, or else your public IPv4 address
+   from `whatismyip.akamai.com` as a `/32`. A pinned `ADMIN_CIDR` is checked
+   against the echo too, and the deploy stops here if no block holds this
+   machine
 3. `terraform apply`: one instance and one firewall, both tagged
    `baseball-card`
 4. cloud-init on the node installs the NVIDIA driver, Docker and the NVIDIA
@@ -150,6 +163,13 @@ curl -s -w '\n' http://localhost:8443/livez    # ok
 
 The tunnel takes `GATEWAY_PORT` on your machine, the port the mock stack uses.
 If the mock stack is up, `make down` first.
+
+`make tunnel` and `make ssh` read the node's address from Terraform's state
+and use the key in `secrets/ssh/`, so they run where `make deploy` ran. To
+browse from a second machine, run `make tunnel` on the first and, on the
+second, `ssh -L 8443:localhost:8443 <user>@<first machine>`. A second machine
+in `ADMIN_CIDR` with a copy of the key can also open the forward itself:
+`ssh -i id_ed25519 -N -L 8443:127.0.0.1:8443 deploy@<node ip>`.
 
 ## 5. check it
 
@@ -279,7 +299,9 @@ and `secrets/ssh/` stay, and the next `make deploy` reuses both.
 |---|---|
 | `ALLOW_CLOUD_DEPLOY is not 1 in .env` | Step 1. |
 | `<region> cannot sell the plan right now` | Pick a region from the table above it, or try later. Nothing was made. |
-| `no ssh on <ip> after 10 minutes` | `ADMIN_CIDR` is not your public address: `curl -4 -s https://whatismyip.akamai.com`. Pin it in `.env` and deploy again. |
+| `ADMIN_CIDR in .env is <blocks>, and this machine's public IPv4 address is <ip>` | No block in `ADMIN_CIDR` holds the machine running the deploy, so it could not have reached port 22. Add `<ip>/32` to the list, or set `ADMIN_CIDR=` empty. Nothing was made. |
+| `ADMIN_CIDR in .env holds <text>, which is not an IPv4 CIDR block` | Each entry is an IPv4 address with a prefix, `203.0.113.4/32`, and entries are separated by commas. Nothing was made. |
+| `no ssh on <ip> after 10 minutes` | The echo gave an address this machine does not leave by, as behind some VPNs, or the node did not boot. `make destroy`, then pin the address you leave by in `ADMIN_CIDR` and deploy again. |
 | `the node never reported ready` | The driver install failed or took over 30 minutes. `make ssh`, then `sudo tail -100 /var/log/baseball-card-bootstrap.log`. |
 | `nvidia-smi lists 0 GPUs` | The driver did not load. The same log, then `make destroy` and deploy again. |
 | `the stack did not report healthy` | A model is still loading or failed to. `make gpu-logs`. |

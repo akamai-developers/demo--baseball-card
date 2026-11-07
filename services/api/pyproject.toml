@@ -1,6 +1,6 @@
 [project]
 name = "card-api"
-version = "0.8.0"
+version = "0.8.1"
 description = "The orchestrator. Takes a photo and stats, returns a baseball card."
 requires-python = ">=3.12"
 dependencies = [

@@ -5,10 +5,6 @@
 #   make vision-base
 #   docker build -f services/cutout/Dockerfile.real .
 #
-# `make up-cpu-cutout` builds it on the CPU base instead, with
-# VISION_BASE=baseball-card-vision-base-cpu:local. Everything below is the same
-# either way.
-#
 # No weights are baked in. They land in the hf-cache volume, so the image stays
 # small and the same image works for any revision the service pins.
 ARG VISION_BASE=baseball-card-vision-base:local

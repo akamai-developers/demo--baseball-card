@@ -251,15 +251,19 @@ decodes and re-encodes the photo again, as the data section says.
 ## the node
 
 These are built and tested here against a mock of the Linode provider and
-stand-ins for SSH and the API. None has been checked on a real node yet. The
-commands marked "on a node" are for after `make deploy`.
+stand-ins for SSH and the API. The port probe and `make check` below ran
+against the first real node on 2026-11-07. The commands marked "on a node"
+are for after `make deploy`.
 
-**Inbound is SSH from one address, and nothing else.** The firewall drops
-every inbound packet no rule accepts. Tunnel mode has one rule: TCP 22 from
-`ADMIN_CIDR`, your address as a `/32` when `.env` leaves it empty. Domain mode
-adds TCP 80 and 443 from anywhere, for Let's Encrypt and browsers, and keeps 22
-to the one address. The node has no private address. Outbound is open: the
-node downloads its driver, images and weights.
+**Inbound is SSH from the addresses you name, and nothing else.** The firewall
+drops every inbound packet no rule accepts. Tunnel mode has one rule: TCP 22
+from the blocks in `ADMIN_CIDR`, your address as a `/32` when `.env` leaves it
+empty. Domain mode adds TCP 80 and 443 from anywhere, for Let's Encrypt and
+browsers, and keeps 22 to those addresses. The node has no private address.
+Outbound is open: the node downloads its driver, images and weights.
+`make deploy` asks the echo even when `ADMIN_CIDR` is pinned, and refuses a
+list in which no block holds the machine it runs on, since that machine's SSH
+is what the rule has to let in.
 
 ```bash
 uv run pytest tests/security/test_terraform.py -q
@@ -267,7 +271,8 @@ terraform -chdir=deploy/terraform output inbound_rules    # on a node
 ```
 
 From outside `ADMIN_CIDR`, every port of a tunnel-mode node should time out.
-From inside it, this should list 22 and nothing else. Not run yet:
+From inside it, this lists 22 and nothing else. Run on 2026-11-07 from an
+address in `ADMIN_CIDR`, it printed 22, and 80, 443 and 8443 timed out:
 
 ```bash
 IP=$(terraform -chdir=deploy/terraform output -raw ip_address)
@@ -386,8 +391,9 @@ The node calls out to build and to load:
   the files' metadata each time a service loads them.
 - **Domain mode:** Let's Encrypt, for the certificate.
 
-`make deploy` asks `whatismyip.akamai.com` for your address, unless
-`ADMIN_CIDR` in `.env` names one.
+`make deploy` asks `whatismyip.akamai.com` for this machine's address: to use
+it when `ADMIN_CIDR` in `.env` is empty, and to check that one of the pinned
+blocks holds it when it is not.
 
 ## not covered
 

@@ -1,7 +1,7 @@
 """The node and its firewall, planned and evaluated rather than eyeballed.
 
 docs/SECURITY.md says that in tunnel mode one inbound rule exists, port 22 from
-admin_cidr, that a domain adds 80 and 443 and nothing else, that GPU_COUNT
+admin_cidrs, that a domain adds 80 and 443 and nothing else, that GPU_COUNT
 picks the plan, and that everything carries the tag destroy.sh looks for.
 
 deploy/terraform/tests/node.tftest.hcl plans the config against a mock of the
@@ -85,7 +85,7 @@ def console(expression: str, domain: str = "", gpu_count: int = 1) -> object:
             "-var",
             f"ssh_public_key={SSH_PUBLIC_KEY}",
             "-var",
-            f"admin_cidr={ADMIN_CIDR}",
+            f'admin_cidrs=["{ADMIN_CIDR}"]',
             "-var",
             f"domain={domain}",
             "-var",
@@ -99,7 +99,10 @@ def console(expression: str, domain: str = "", gpu_count: int = 1) -> object:
     )
     if result.returncode != 0:
         pytest.fail(f"terraform console failed:\n{result.stderr}")
-    return json.loads(json.loads(result.stdout.strip()))
+    # The value is the last line. A deploy.auto.tfvars left in the directory by
+    # make deploy is loaded too, and console prints a warning on stdout for any
+    # line in it the config no longer declares, ahead of the value.
+    return json.loads(json.loads(result.stdout.strip().splitlines()[-1]))
 
 
 def digest(path: Path) -> str | None:
@@ -153,7 +156,7 @@ def test_domain_mode_adds_only_80_and_443() -> None:
     rules = console("local.inbound_rules", domain="cards.example.com")
     by_port = {rule["ports"]: rule for rule in rules}
     assert list(by_port) == ["22", "80", "443"]
-    assert by_port["22"]["ipv4"] == [ADMIN_CIDR], "ssh must stay locked to admin_cidr"
+    assert by_port["22"]["ipv4"] == [ADMIN_CIDR], "ssh must stay locked to admin_cidrs"
     for port in ("80", "443"):
         assert by_port[port]["ipv4"] == ["0.0.0.0/0"]
         assert by_port[port]["protocol"] == "TCP"

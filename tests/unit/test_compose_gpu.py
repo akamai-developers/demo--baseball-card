@@ -337,19 +337,3 @@ def test_the_gpu_profile_carries_no_mock_service() -> None:
         if "gpu" in profiles and "mock" in profiles:
             # api and caddy run in both. No model service may.
             assert name in ("api", "caddy"), f"{name} is in both profiles"
-
-
-def test_up_cpu_cutout_swaps_the_mock_cutout_for_birefnet(docker: list[str]) -> None:
-    """The variables the Makefile sets, and what they do to the mock profile."""
-    makefile = (REPO_ROOT / "Makefile").read_text()
-    recipe = makefile.split("\nup-cpu-cutout:", 1)[1].split("\n\n", 1)[0]
-    swapped = dict(re.findall(r"(CUTOUT_[A-Z_]+)=(\S+)", recipe))
-    assert swapped["CUTOUT_DOCKERFILE"] == "services/cutout/Dockerfile.real"
-
-    cutout = compose_config(docker, ("mock",), swapped)["services"]["cutout"]
-    assert cutout["build"]["dockerfile"] == "services/cutout/Dockerfile.real"
-    assert cutout["build"]["args"]["VISION_BASE"] == "baseball-card-vision-base-cpu:local"
-    assert cutout["environment"]["BACKEND"] == "real"
-    assert cutout["environment"]["DEVICE"] == "cpu"
-    # A laptop is not the node. The back of the card says a CPU, not Akamai.
-    assert cutout["environment"]["GPU_LABEL"] == "local-cpu"

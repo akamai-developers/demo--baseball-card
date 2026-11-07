@@ -86,7 +86,7 @@ apt_get install -y --no-install-recommends \
 # The module is built now, or it is not and nothing below is worth doing. dkms
 # says "installed" only for a module that compiled and landed in /lib/modules.
 # A branch that ships precompiled modules instead has no nvidia entry at all,
-# which is why this only judges a dkms build that is actually there.
+# which is why this only judges a dkms build that is there.
 if dkms status 2>/dev/null | grep -q '^nvidia/'; then
 	dkms status | grep -q '^nvidia/.*: installed' || {
 		echo "dkms did not build the nvidia module:" >&2
@@ -108,7 +108,7 @@ systemctl restart docker
 # ---- hold the driver --------------------------------------------------------
 # A driver upgrade swaps the kernel module out from under running containers and
 # every CUDA call starts failing with a version mismatch until the box reboots.
-# Hold whatever the install actually put on the box: the package set differs
+# Hold whatever the install put on the box: the package set differs
 # between the dkms and the precompiled-module flavours of a branch, so a
 # hardcoded list would fail on one of them.
 mapfile -t nvidia_packages < <(

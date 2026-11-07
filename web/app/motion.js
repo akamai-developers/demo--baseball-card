@@ -13,7 +13,7 @@
  * Every CSS transition uses them. Every animation started from JavaScript
  * starts here, reads them with getComputedStyle, and asks
  * prefers-reduced-motion first. Under "reduce" animate() starts nothing and
- * returns null, and the element is simply in its final state.
+ * returns null, and the element is in its final state.
  *
  * The three write helpers at the end are here for the same reason. A node
  * that is rewritten starts its animations over and loses its image, so a

@@ -8,16 +8,8 @@
 # It is a separate build rather than a compose service because the two services
 # that need it use it as a FROM, and compose does not order builds by FROM.
 #
-# Two builds come out of this one file:
-#
-#   GPU    the defaults. CUDA 12.6 runtime on Ubuntu 24.04, torch from the
-#          cu126 wheel index. This is what runs on the node.
-#   CPU    BASE_IMAGE=python:3.12-slim-bookworm TORCH_INDEX=.../whl/cpu. This
-#          is what `make up-cpu-cutout` runs on a laptop, so the real BiRefNet
-#          code path can be exercised on a machine with no GPU in it.
-#
-# Same Dockerfile, same layer order, one wheel index apart. A CPU run that works
-# is real evidence about the GPU image, which is the point of having one file.
+# CUDA 12.6 runtime on Ubuntu 24.04, and torch from the cu126 wheel index. Both
+# are build arguments, so another CUDA is a flag away.
 ARG BASE_IMAGE=nvidia/cuda:12.6.3-runtime-ubuntu24.04
 FROM ${BASE_IMAGE}
 

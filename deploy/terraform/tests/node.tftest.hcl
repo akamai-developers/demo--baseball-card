@@ -13,7 +13,7 @@ mock_provider "linode" {}
 
 variables {
   ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExampleExampleExampleExampleExampleEx test"
-  admin_cidr     = "203.0.113.4/32"
+  admin_cidrs    = ["203.0.113.4/32"]
 }
 
 run "tunnel_mode_opens_port_22_to_one_address_and_nothing_else" {
@@ -31,7 +31,7 @@ run "tunnel_mode_opens_port_22_to_one_address_and_nothing_else" {
 
   assert {
     condition     = linode_firewall.node.inbound[0].ipv4 == tolist(["203.0.113.4/32"])
-    error_message = "Port 22 is open to something other than admin_cidr."
+    error_message = "Port 22 is open to something other than admin_cidrs."
   }
 
   assert {
@@ -54,7 +54,7 @@ run "domain_mode_adds_80_and_443_and_keeps_22_to_one_address" {
 
   assert {
     condition     = linode_firewall.node.inbound[0].ipv4 == tolist(["203.0.113.4/32"])
-    error_message = "Domain mode opened port 22 beyond admin_cidr."
+    error_message = "Domain mode opened port 22 beyond admin_cidrs."
   }
 
   assert {
@@ -141,4 +141,37 @@ run "the_node_has_no_private_address" {
     condition     = linode_instance.node.private_ip == false
     error_message = "A private address is one more way in."
   }
+}
+
+run "two_admin_blocks_are_the_one_ssh_rule" {
+  command = plan
+
+  variables {
+    admin_cidrs = ["203.0.113.4/32", "198.51.100.0/24"]
+  }
+
+  assert {
+    condition     = length(linode_firewall.node.inbound) == 1 && linode_firewall.node.inbound[0].ipv4 == tolist(["203.0.113.4/32", "198.51.100.0/24"])
+    error_message = "Two admin blocks must be the two addresses of the one ssh rule, in order, and no other rule."
+  }
+}
+
+run "no_admin_block_is_refused" {
+  command = plan
+
+  variables {
+    admin_cidrs = []
+  }
+
+  expect_failures = [var.admin_cidrs]
+}
+
+run "an_admin_block_that_is_not_ipv4_is_refused" {
+  command = plan
+
+  variables {
+    admin_cidrs = ["203.0.113.4/32", "2001:db8::/32"]
+  }
+
+  expect_failures = [var.admin_cidrs]
 }

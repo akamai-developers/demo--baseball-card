@@ -1,5 +1,5 @@
 # Every variable has a default but the two that cannot have one: the SSH public
-# key and the address allowed to reach port 22. deploy.sh writes both, with
+# key and the addresses allowed to reach port 22. deploy.sh writes both, with
 # the values from .env, into deploy.auto.tfvars.
 
 variable "label" {
@@ -66,13 +66,16 @@ variable "ssh_public_key" {
   }
 }
 
-variable "admin_cidr" {
-  description = "The only address allowed to reach port 22, as an IPv4 CIDR. deploy.sh uses ADMIN_CIDR from .env, or your public IP as a /32."
-  type        = string
+variable "admin_cidrs" {
+  description = "The only addresses allowed to reach port 22, as IPv4 CIDR blocks. deploy.sh writes ADMIN_CIDR from .env here, split on its commas, or your public IP as a /32."
+  type        = list(string)
 
   validation {
-    condition     = can(regex("^[0-9]{1,3}(\\.[0-9]{1,3}){3}/[0-9]{1,2}$", var.admin_cidr)) && can(cidrhost(var.admin_cidr, 0))
-    error_message = "admin_cidr must be an IPv4 CIDR block, for example 203.0.113.4/32."
+    condition = length(var.admin_cidrs) > 0 && alltrue([
+      for block in var.admin_cidrs :
+      can(regex("^[0-9]{1,3}(\\.[0-9]{1,3}){3}/[0-9]{1,2}$", block)) && can(cidrhost(block, 0))
+    ])
+    error_message = "admin_cidrs must be one or more IPv4 CIDR blocks, for example [\"203.0.113.4/32\"]."
   }
 }
 

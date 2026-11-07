@@ -5,4 +5,4 @@ and tests/unit/test_version.py holds it, and every pyproject.toml, to the
 newest entry in CHANGELOG.md.
 """
 
-__version__ = "0.8.0"
+__version__ = "0.8.1"

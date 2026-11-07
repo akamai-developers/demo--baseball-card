@@ -1,6 +1,6 @@
 [project]
 name = "card-cli"
-version = "0.8.0"
+version = "0.8.1"
 description = "cardctl. Posts a photo and a stats file, waits, and writes the card."
 requires-python = ">=3.12"
 dependencies = [

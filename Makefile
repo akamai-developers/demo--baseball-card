@@ -35,13 +35,12 @@ STATS ?= examples/stats.json
 STYLE ?=
 OUT ?= out
 
-# The torch base images: CUDA for the node, CPU wheels for BiRefNet on a laptop.
+# The torch base image the node's cutout and art images build FROM.
 VISION_BASE := baseball-card-vision-base:local
-VISION_BASE_CPU := baseball-card-vision-base-cpu:local
 
-.PHONY: help env up-mock down logs ps card-mock card card-fixture up-cpu-cutout \
-	card-cpu-cutout gpu-check deploy tunnel check smoke rotate-key destroy ssh gpu-logs \
-	web-vendor vision-base vision-base-cpu test test-slow lint
+.PHONY: help env up-mock down logs ps card-mock card card-fixture \
+	gpu-check deploy tunnel check smoke rotate-key destroy ssh gpu-logs \
+	web-vendor vision-base test test-slow lint
 
 # ---- On a laptop ----------------------------------------------------------
 # The mock stack: every service in Docker with stub models, behind Caddy on
@@ -112,20 +111,6 @@ card-fixture: ## Render the test photo's card into out/. No stack, no models. ST
 	uv run playwright install chromium
 	uv run python -m card.render --fixture $(if $(STYLE),--style $(STYLE),)
 
-# BiRefNet is the one real model a laptop can run: 444 MB of weights. This is
-# the mock stack with the real cutout service in place of the matte, built on
-# the CPU torch image. The ledger says local-cpu.
-up-cpu-cutout: vision-base-cpu ## The mock stack with the real BiRefNet on this machine's CPU
-	@echo "BiRefNet on the CPU. The first run downloads 444 MB of weights into the hf-cache volume."
-	CUTOUT_DOCKERFILE=services/cutout/Dockerfile.real \
-	CUTOUT_BACKEND=real \
-	CUTOUT_GPU_LABEL=local-cpu \
-	CUTOUT_START_PERIOD=900s \
-	WAIT_S=900 $(MAKE) --no-print-directory up-mock
-
-card-cpu-cutout: up-cpu-cutout ## A card cut out by the real BiRefNet on the CPU, into out/. PHOTO=
-	@$(MAKE) --no-print-directory card PHOTO="$(or $(PHOTO),tests/fixtures/portrait.jpg)"
-
 # ---- On Akamai Cloud ------------------------------------------------------
 # One GPU node, tagged baseball-card. deploy, rotate-key and destroy refuse to
 # run without ALLOW_CLOUD_DEPLOY=1 in .env, and need LINODE_TOKEN in your shell.
@@ -173,11 +158,6 @@ web-vendor: ## Download the face detector into web/vendor/, checked by sha256
 # builds it before compose does. 15 GB, most of it CUDA libraries.
 vision-base: ## Build the CUDA torch base image the node's model services use
 	$(DOCKER) build -f services/vision-base.Dockerfile -t $(VISION_BASE) .
-
-vision-base-cpu: ## Build the same base on CPU wheels, for up-cpu-cutout
-	$(DOCKER) build -f services/vision-base.Dockerfile -t $(VISION_BASE_CPU) \
-		--build-arg BASE_IMAGE=python:3.12-slim-bookworm \
-		--build-arg TORCH_INDEX=https://download.pytorch.org/whl/cpu .
 
 test: ## Run the tests. The integration tests skip until make up-mock
 	uv run playwright install chromium

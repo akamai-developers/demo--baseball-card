@@ -4,6 +4,63 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The version is the
 one `packages/common` reports, and every `pyproject.toml` carries it.
 
+## [0.8.1] - 2026-11-07
+
+The first `make deploy` against the real API, and what it taught.
+
+### Fixed
+
+- `make deploy` was run on a box whose `.env` pinned another machine's address
+  in `ADMIN_CIDR`. Terraform made the node and its firewall, and the firewall
+  then dropped the deploy's own SSH for ten minutes, on a node billing by the
+  hour. `deploy.sh` now asks the echo even when `ADMIN_CIDR` is pinned, and
+  stops before Terraform, with both addresses in the sentence, when the block
+  does not hold the machine it runs on. An echo that does not answer leaves a
+  pinned block alone, with a warning. `ip_in_cidr` in `lib.sh` does the sum in
+  bash, so it runs on a Mac.
+- A pinned `ADMIN_CIDR` that is not an IPv4 CIDR block is refused before
+  Terraform, not by it.
+
+### Added
+
+- `ADMIN_CIDR` takes more than one block, separated by commas: the box that
+  runs the deploy and the laptop that will tunnel, say. One block has to hold
+  the machine running `make deploy`. Terraform's `admin_cidr` is now
+  `admin_cidrs`, a list, and the one ssh rule carries every block.
+
+### Changed
+
+- The README is 187 lines, from 346, and leads with the deploy. The mock
+  stack is one section, "without a GPU". The status table is a paragraph.
+  The stats fields and their ranges moved to `examples/curl.md`, the card's
+  rules and `make card-fixture` to `docs/ARCHITECTURE.md`, and
+  `make card-cpu-cutout` is in CONTRIBUTING.md only.
+- `docs/DEPLOY.md` says to run the deploy from the machine whose browser you
+  will use, since the firewall and the tunnel are both tied to it, and has a
+  row for the new refusal.
+- The README has no section for the mock stack any more. CONTRIBUTING.md
+  describes it, as the stack the tests run on and the way to run the app
+  with no GPU.
+- The README's pictures are the event build's card, made on a node, and the
+  captions say so. The screenshot of the app with the mock card is gone until
+  one through the tunnel replaces it. The prerequisites are a numbered list.
+
+### Removed
+
+- `make up-cpu-cutout`, `make card-cpu-cutout` and `make vision-base-cpu`,
+  the mock stack with BiRefNet on the CPU in it, and the four `CUTOUT_*`
+  settings in `docker-compose.yml` that made the swap. `make test-slow` still
+  runs BiRefNet on the CPU, in process.
+
+### Notes
+
+- The first full `make deploy` ran on 2026-11-07, from a box in
+  `ADMIN_CIDR`: one `g2-gpu-rtx4000a1-m` in us-ord came up healthy with all
+  three models on its one card. `make check` passed. `make smoke` made a card
+  in 7.5 seconds: cutout 247 ms, art 124 ms from the pool, text 4,536 ms,
+  every model step on `akamai-gpu0`. Idle, the card held 16,518 of 20,475
+  MiB: vLLM 13,500, BiRefNet 2,012, FLUX 986 with its weights in RAM.
+
 ## [0.8.0] - 2026-11-06
 
 Hardening, a fresh clone, and every command in the docs run once more. The

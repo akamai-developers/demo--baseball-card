@@ -22,13 +22,14 @@ locals {
 
   domain_mode = var.domain != ""
 
-  # Tunnel mode is one inbound rule. Domain mode adds two, because Let's Encrypt
-  # has to reach port 80 for the HTTP challenge and browsers have to reach 443.
+  # Tunnel mode is one inbound rule, with every admin block in it. Domain mode
+  # adds two, because Let's Encrypt has to reach port 80 for the HTTP challenge
+  # and browsers have to reach 443.
   ssh_rule = [{
     label    = "ssh-admin"
     protocol = "TCP"
     ports    = "22"
-    ipv4     = [var.admin_cidr]
+    ipv4     = var.admin_cidrs
   }]
 
   web_rules = local.domain_mode ? [

@@ -7,7 +7,7 @@ it does for the card.
 
 Where each model runs right now is not in here. That changes while the node
 runs, and /healthz reports it under services[<service>]: ran_on, loaded,
-vram_mb, and the model the service is actually serving.
+vram_mb, and the model the service is serving.
 """
 
 from __future__ import annotations

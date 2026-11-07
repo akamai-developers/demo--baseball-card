@@ -69,6 +69,23 @@ CARD=$(curl -s -H "Authorization: Bearer $CARD_API_KEY" \
 echo $CARD
 ```
 
+The stats need a `name`. Everything else is optional: `number` (0 to 99),
+`position` (`SS`, `CF`, up to 4 characters), `bats` (`R`, `L` or `S`),
+`throws` (`R` or `L`), `height_in`, `weight_lb`, `hometown`, and up to six
+numbers in `metrics`:
+
+| Key | On the card | Range |
+|---|---|---|
+| `bat_speed_mph` | Bat Speed | 50 to 85 mph |
+| `exit_velo_mph` | Exit Velocity | 60 to 115 mph |
+| `launch_angle_deg` | Launch Angle | -10 to 35 deg |
+| `swing_length_ft` | Swing Length | 4.5 to 10 ft |
+| `attack_angle_deg` | Attack Angle | -5 to 25 deg |
+| `time_to_contact_ms` | Time to Contact | 100 to 220 ms |
+
+A card with no numbers has no stats table and no "Swings like". A number out
+of its range is refused with a sentence that says the range, as below.
+
 The job: its status, every step of the ledger, the text, the comps, what the
 photo checks found, and which files are ready. In mock mode it is done in about
 two seconds:

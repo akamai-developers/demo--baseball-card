@@ -49,13 +49,6 @@ def test_the_gpu_base_takes_torch_from_the_cuda_index() -> None:
     assert arg("BASE_IMAGE").startswith("nvidia/cuda:12.6.")
 
 
-def test_the_cpu_base_takes_torch_from_the_index_the_lock_does() -> None:
-    project = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
-    index = {entry["name"]: entry["url"] for entry in project["tool"]["uv"]["index"]}
-    makefile = (REPO_ROOT / "Makefile").read_text()
-    assert f"--build-arg TORCH_INDEX={index['pytorch-cpu']}" in makefile
-
-
 @pytest.mark.parametrize("service", sorted(REAL))
 def test_a_real_image_installs_from_the_lock_and_keeps_the_bases_torch(service: str) -> None:
     """--frozen: the lock's versions or a failed build, never a new resolution.

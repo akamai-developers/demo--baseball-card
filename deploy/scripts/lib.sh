@@ -210,6 +210,25 @@ node_env() {
 	done
 }
 
+# ---- addresses --------------------------------------------------------------
+
+# An IPv4 address as one number. 10# so an octet with a leading zero is read
+# as decimal, not octal.
+ipv4_int() {
+	local a b c d
+	IFS=. read -r a b c d <<<"$1"
+	printf '%d' $(((10#$a << 24) | (10#$b << 16) | (10#$c << 8) | 10#$d))
+}
+
+# Is the IPv4 address inside the CIDR block? Plain bash, because this runs on
+# a Mac too, where there is no ipcalc and no python to count on.
+ip_in_cidr() {
+	local ip="$1" cidr="$2" bits mask
+	bits="${cidr#*/}"
+	mask=$((bits == 0 ? 0 : (0xFFFFFFFF << (32 - bits)) & 0xFFFFFFFF))
+	[ $(($(ipv4_int "$ip") & mask)) -eq $(($(ipv4_int "${cidr%/*}") & mask)) ]
+}
+
 # ---- ssh --------------------------------------------------------------------
 
 # A keypair that belongs to this repo and nothing else. Never one from ~/.ssh:

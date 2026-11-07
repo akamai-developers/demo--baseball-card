@@ -256,7 +256,8 @@ class Box:
                 "FAKE_LOG": str(self.log),
                 "FAKE_DIR": str(self.fake),
                 "FAKE_IP": IP,
-                "FAKE_MY_IP": "198.51.100.23",
+                # Inside DEPLOYABLE's ADMIN_CIDR, as a laptop deploying from its own address is.
+                "FAKE_MY_IP": "203.0.113.4",
                 "FAKE_KNOWN_HOSTS": str(self.known_hosts),
                 "SSH_WAIT_S": "0",
                 "BOOTSTRAP_WAIT_S": "0",
@@ -422,7 +423,7 @@ def test_terraform_gets_the_settings_from_dotenv(tmp_path) -> None:
     assert "gpu_count      = 2\n" in tfvars
     assert 'instance_type  = "g2-gpu-rtx4000a2-m"' in tfvars
     assert 'domain         = "cards.example.com"' in tfvars
-    assert 'admin_cidr     = "203.0.113.4/32"' in tfvars
+    assert 'admin_cidrs    = ["203.0.113.4/32"]' in tfvars
     pub = (box.repo / "secrets" / "ssh" / "id_ed25519.pub").read_text().strip()
     assert f'ssh_public_key = "{pub}"' in tfvars
 
@@ -430,9 +431,102 @@ def test_terraform_gets_the_settings_from_dotenv(tmp_path) -> None:
 def test_no_admin_cidr_asks_the_echo_and_uses_a_32(tmp_path) -> None:
     box = Box(tmp_path, f"ALLOW_CLOUD_DEPLOY=1\nCARD_API_KEY={KEY}\n")
     done = box.run("deploy.sh", FAKE_SSH_DOWN="1", FAKE_MY_IP="198.51.100.23")
-    assert 'admin_cidr     = "198.51.100.23/32"' in box.tfvars()
+    assert 'admin_cidrs    = ["198.51.100.23/32"]' in box.tfvars()
     assert "ADMIN_CIDR 198.51.100.23/32, detected" in done.stderr
     assert any("curl -4 -sf --max-time 10 https://whatismyip.akamai.com" in c for c in box.calls)
+
+
+def test_a_pinned_admin_cidr_that_leaves_this_machine_out_stops_it_before_terraform(
+    tmp_path,
+) -> None:
+    """Every ssh in deploy.sh comes from the machine running it. A pinned
+    ADMIN_CIDR that does not hold that machine is a firewall against the script
+    itself, and on 2026-11-07 it cost ten minutes and a billed node. Now it is
+    a sentence before terraform runs."""
+    box = Box(tmp_path, DEPLOYABLE)
+    done = box.run("deploy.sh", FAKE_MY_IP="198.51.100.23")
+    assert done.returncode != 0
+    assert (
+        "ADMIN_CIDR in .env is 203.0.113.4/32, and this machine's public IPv4 address is "
+        "198.51.100.23" in done.stderr
+    )
+    assert "No block in it holds 198.51.100.23" in done.stderr
+    assert "Add 198.51.100.23/32 to ADMIN_CIDR, or set ADMIN_CIDR= empty" in done.stderr
+    assert "Nothing was created" in done.stderr
+    assert box.called("terraform") == []
+
+
+def test_a_pinned_block_that_holds_this_machine_is_used_as_written(tmp_path) -> None:
+    box = Box(tmp_path, f"ALLOW_CLOUD_DEPLOY=1\nCARD_API_KEY={KEY}\nADMIN_CIDR=203.0.113.0/24\n")
+    done = box.run("deploy.sh", FAKE_SSH_DOWN="1", FAKE_MY_IP="203.0.113.77")
+    assert 'admin_cidrs    = ["203.0.113.0/24"]' in box.tfvars()
+    assert "ADMIN_CIDR 203.0.113.0/24, from .env. This machine is 203.0.113.77, inside" in (
+        done.stderr
+    )
+
+
+def test_two_blocks_reach_terraform_in_order_and_this_machine_may_be_in_either(tmp_path) -> None:
+    """A laptop at home and the box the deploy runs on both ssh to the node, so
+    both go in ADMIN_CIDR, separated by commas. A space after a comma is fine."""
+    box = Box(
+        tmp_path,
+        f"ALLOW_CLOUD_DEPLOY=1\nCARD_API_KEY={KEY}\nADMIN_CIDR=203.0.113.4/32, 198.51.100.7/32\n",
+    )
+    done = box.run("deploy.sh", FAKE_SSH_DOWN="1", FAKE_MY_IP="198.51.100.7")
+    assert 'admin_cidrs    = ["203.0.113.4/32", "198.51.100.7/32"]' in box.tfvars()
+    assert "This machine is 198.51.100.7, inside 198.51.100.7/32." in done.stderr
+
+
+def test_two_blocks_that_both_leave_this_machine_out_stop_it_before_terraform(tmp_path) -> None:
+    box = Box(
+        tmp_path,
+        f"ALLOW_CLOUD_DEPLOY=1\nCARD_API_KEY={KEY}\nADMIN_CIDR=203.0.113.4/32,198.51.100.7/32\n",
+    )
+    done = box.run("deploy.sh", FAKE_MY_IP="192.0.2.99")
+    assert done.returncode != 0
+    assert "No block in it holds 192.0.2.99" in done.stderr
+    assert "Add 192.0.2.99/32 to ADMIN_CIDR" in done.stderr
+    assert box.called("terraform") == []
+
+
+def test_an_empty_entry_between_commas_stops_it_before_terraform(tmp_path) -> None:
+    box = Box(
+        tmp_path,
+        f"ALLOW_CLOUD_DEPLOY=1\nCARD_API_KEY={KEY}\nADMIN_CIDR=203.0.113.4/32,,198.51.100.7/32\n",
+    )
+    done = box.run("deploy.sh")
+    assert done.returncode != 0
+    assert "ADMIN_CIDR in .env has an empty entry between two commas" in done.stderr
+    assert box.called("terraform") == []
+
+
+def test_a_pinned_admin_cidr_stands_when_the_echo_does_not_answer(tmp_path) -> None:
+    """An echo that is down must not stop a deploy whose address is pinned. It
+    says what it could not check, and goes on."""
+    box = Box(tmp_path, DEPLOYABLE)
+    done = box.run("deploy.sh", FAKE_SSH_DOWN="1", FAKE_MY_IP="")
+    assert 'admin_cidrs    = ["203.0.113.4/32"]' in box.tfvars()
+    assert "could not check ADMIN_CIDR against this machine's address" in done.stderr
+    assert box.called("terraform") != []
+
+
+@pytest.mark.parametrize(
+    ("pinned", "bad"),
+    [
+        ("203.0.113.4", "203.0.113.4"),
+        ("203.0.113.4/33", "203.0.113.4/33"),
+        ("example.com/32", "example.com/32"),
+        ("203.0.113.4/32,example.com/32", "example.com/32"),
+    ],
+)
+def test_a_pinned_admin_cidr_that_is_not_a_block_stops_it_before_terraform(
+    tmp_path, pinned, bad
+) -> None:
+    box = Box(tmp_path, f"ALLOW_CLOUD_DEPLOY=1\nCARD_API_KEY={KEY}\nADMIN_CIDR={pinned}\n")
+    done = box.run("deploy.sh")
+    assert done.returncode != 0
+    assert f"ADMIN_CIDR in .env holds {bad}, which is not an IPv4 CIDR block" in done.stderr
+    assert box.called("terraform") == []
 
 
 @pytest.mark.parametrize("answer", ["", "<html>busy</html>", "2001:db8::1"])

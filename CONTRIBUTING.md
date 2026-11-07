@@ -24,6 +24,13 @@ make up-mock
 make test
 ```
 
+The mock stack is the whole app in Docker on `localhost:8443`, with stand-ins
+for the three models: a colour key for BiRefNet, a ballpark drawn with numpy
+for FLUX, and a word list for Gemma. It is also the way to run the app on a
+machine with no GPU. `make card-mock` makes the test photo's card through it,
+into `out/`, and prints the ledger. Open http://localhost:8443 and paste the
+key from `.env` to use the app against it. `make down` stops it.
+
 The compose and Caddy tests call Docker. Where your user needs `sudo` for it,
 run `DOCKER="sudo -E docker" make test`. `-E` matters: the tests set variables
 for compose, and plain `sudo` drops them.
@@ -42,8 +49,7 @@ make test-slow
 
 It adds torch and BiRefNet's other dependencies to `.venv` the first time,
 about 1 GB, and the weights to Hugging Face's cache in your home directory,
-444 MB. Then it takes about a minute. `make card-cpu-cutout` runs the same
-model inside the mock stack and makes a card with it.
+444 MB. Then it takes about a minute.
 
 FLUX and Gemma 4 do not run on a laptop. `make vision-base` builds the CUDA
 torch image the node's cutout and art images start from, 15 GB, if you want to
@@ -85,16 +91,16 @@ terraform -chdir=deploy/terraform fmt -recursive   # to fix the HCL
 
 ## the pictures
 
-`docs/card-front.jpg` and `docs/card-back.jpg` are the two PNGs of
-`make card-fixture` at half size. A change that shows on either side of the
-card makes them again:
+`docs/card-front.jpg` and `docs/card-back.jpg` are a card made on an Akamai
+Cloud GPU node by the event build this repo was cut from, at half size,
+750 x 1050. For this repo's own card instead, `make smoke` writes both sides
+to `out/smoke/`, and this resizes them:
 
 ```bash
-make card-fixture
 uv run python -c "
 from PIL import Image
 for side in ('front', 'back'):
-    Image.open(f'out/card-{side}.png').convert('RGB').resize((750, 1050), Image.LANCZOS).save(
+    Image.open(f'out/smoke/card-{side}.png').convert('RGB').resize((750, 1050), Image.LANCZOS).save(
         f'docs/card-{side}.jpg', quality=88, optimize=True, progressive=True)"
 ```
 
@@ -109,18 +115,6 @@ from PIL import Image
 Image.open('out/card-front.png').convert('RGB').resize((192, 268), Image.LANCZOS).save(
     'web/app/styles/$style.jpg', quality=85, optimize=True, progressive=True)"
 done
-```
-
-`docs/app.jpg` is the browser test's screenshot of the test card on the mock
-stack, at two thirds:
-
-```bash
-make up-mock
-uv run pytest tests/integration/test_app.py -q -k test_photo
-uv run python -c "
-from PIL import Image
-Image.open('out/ui/result-front-1920x1080.png').convert('RGB').resize((1280, 720), Image.LANCZOS).save(
-    'docs/app.jpg', quality=85, optimize=True, progressive=True)"
 ```
 
 ## versions

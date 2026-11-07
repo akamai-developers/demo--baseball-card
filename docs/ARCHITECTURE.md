@@ -10,8 +10,8 @@ laptop
   |  ssh -L 8443:127.0.0.1:8443 (make tunnel), or https://DOMAIN in domain mode
   v
 +--------------------------------------------------------------------------+
-| g2-gpu-rtx4000a1-m  1x RTX 4000 Ada 20 GB, 32 GB RAM  0.67 USD/h  default |
-| g2-gpu-rtx4000a2-s  2x RTX 4000 Ada 20 GB, 32 GB RAM  1.05 USD/h          |
+| g2-gpu-rtx4000a1-m  1x RTX 4000 Ada 20 GB, 32 GB RAM  0.67 USD/h default |
+| g2-gpu-rtx4000a2-s  2x RTX 4000 Ada 20 GB, 32 GB RAM  1.05 USD/h         |
 |                                                                          |
 | caddy  127.0.0.1:8443, or :80 and :443 in domain mode. The only port.    |
 |   / /app/* /vendor/* /livez       -> api        :8080  open              |
@@ -88,6 +88,32 @@ A model service that does not answer, or not within `STEP_TIMEOUT_S`
 what the card got instead, and `make gpu-logs` on the node or `make logs` on a
 laptop. The app shows it beside the ledger, and cardctl prints it.
 
+## the card
+
+Both sides are HTML, drawn by Playwright's Chromium at 1500 x 2100, and the
+image models write no words: every word on the card is in a template. A style
+is a front template, a palette and a prompt. `akamai` is a navy frame with the
+Akamai logo over a stadium at night. `classic` is a plain cream border with no
+logo over a ballpark by day. Each one is
+`packages/card/src/card/templates/front-<style>.html` and an entry in
+`styles.json`, which holds its colours and the prompt FLUX paints its
+background from. The back is one template in the style's colours.
+
+The face decides where you stand. Your face is 14 percent of the picture's
+height, centred 27 percent of the way down, and you stand on the name plate. A
+photo cut off at the waist makes the face bigger, up to 30 percent, so you
+still reach the plate. The top edge never cuts your head.
+
+The back has your bio, the nickname, the numbers you gave, the three hitters
+nearest them, the scouting report and the ledger. The ledger names each step's
+model, licence, where it ran and how many milliseconds it took. The last line
+says "Made on Akamai Cloud GPUs" only when every model step ran on a GPU.
+
+`make card-fixture` draws the test photo's card into `out/` with no stack and
+no models, and `STYLE=classic` picks the other style. On Linux, if Chromium
+will not start, `uv run playwright install-deps chromium` installs the system
+libraries it needs, with `sudo`.
+
 ## the two GPU layouts
 
 `GPU_COUNT` in `.env` picks the plan and the layout. A layout is six lines,
@@ -100,7 +126,7 @@ laptop. The app shows it beside the ledger, and cardctl prints it.
 | FLUX.2 klein | card 0, weights in RAM, a layer at a time | card 0, alone |
 | BiRefNet | card 0 | card 1 |
 | Gemma 4 on vLLM | card 0, 0.65 of it | card 1, 0.80 of it |
-| measured | no, sized on paper | yes, September and October 2026 |
+| measured | yes, 2026-11-07 | yes, September and October 2026 |
 
 An RTX 4000 Ada has 20,475 MiB. With two cards, `nvidia-smi` per process with
 these models and settings, card 0 in September 2026 and card 1 on 2026-10-30:
@@ -112,14 +138,19 @@ card 1  Gemma 4 12B    16,982 MiB   0.80 of the card is 16,380, plus 602
         spare           1,466 MiB
 ```
 
-With one card, on paper:
+With one card, `nvidia-smi` per process on this repo's first node on
+2026-11-07, idle after `make smoke`:
 
 ```
-card 0  Gemma 4 12B    13,911 MiB   0.65 of the card is 13,309, plus 602
+card 0  Gemma 4 12B    13,500 MiB   0.65 of the card is 13,309, plus 191
         BiRefNet        2,012 MiB
-        FLUX.2 klein   under 3,000 MiB, its weights in RAM
-        spare          about 1,550 MiB
+        FLUX.2 klein      986 MiB   idle, its weights in RAM
+        in use         16,518 of 20,475 MiB
 ```
+
+While FLUX paints, the layers it streams to the card should stay under
+3,000 MiB. That peak is still sized on paper: `make smoke` took its background
+from the pool, in 124 ms.
 
 Gemma's weights are 9,789 MiB, so vLLM cannot go much lower. FLUX is the one
 that gives. Moved to the card one part at a time, its transformer is 7,392 MiB
@@ -170,7 +201,7 @@ come down: 16.0 GB of the repo's 23.7.
 
 | | mock | gpu |
 |---|---|---|
-| cutout | a colour key on a plain wall, or BiRefNet on the CPU with `make up-cpu-cutout` | BiRefNet, fp16 |
+| cutout | a colour key on a plain wall | BiRefNet, fp16 |
 | art | a drawn ballpark, with the same pool | FLUX.2 [klein] 4B, bf16, 4 steps |
 | llm | a word list behind vLLM's two routes | vLLM, Gemma 4 12B w4a16 |
 | gpu-stats | one invented card | `nvidia-smi` |
@@ -198,5 +229,6 @@ lock holds both.
 
 On 2026-11-06 the vision base and both real images were built on a machine with
 no GPU. Inside them torch was `2.14.0+cu126`, with transformers 4.57.6 beside
-BiRefNet and 5.17.0 and diffusers 0.40.0 beside FLUX. They have not run on a
-GPU yet.
+BiRefNet and 5.17.0 and diffusers 0.40.0 beside FLUX. On 2026-11-07 the first
+node built them again and ran them: `make check` found BiRefNet, FLUX and vLLM
+loaded on card 0, and `make smoke` made a card with all three.

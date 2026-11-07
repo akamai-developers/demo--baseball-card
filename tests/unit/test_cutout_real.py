@@ -298,10 +298,9 @@ def test_load_runs_a_warm_up_on_something_that_has_a_subject_in_it(clean_setting
 def test_birefnet_on_this_cpu_covers_the_person_in_the_fixture(clean_settings, portrait):
     """The real model, the real weights, the real photo, on a CPU.
 
-    Nothing here asserts a pretty matte: that is for a person looking at the
-    card `make card-cpu-cutout` writes. What it asserts is that the plumbing is
-    right: the person is opaque, the corners are not, and the edge is soft
-    rather than cut with scissors.
+    Nothing here asserts a pretty matte: that is for a person looking at a
+    card. What it asserts is that the plumbing is right: the person is opaque,
+    the corners are not, and the edge is soft rather than cut with scissors.
     """
     pytest.importorskip("torch", reason="run: make test-slow")
     pytest.importorskip("transformers", reason="run: make test-slow")
